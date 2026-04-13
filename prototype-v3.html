@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAIT Tracker v3 - รพ.มหาวิทยาลัยพะเยา</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'IBM Plex Sans Thai', 'Sarabun', sans-serif; background: #f1f5f9; letter-spacing:-0.01em; }
+  .navy { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); }
+  .navy-solid { background:#1e3a5f; }
+  .navy-text { color:#1e3a5f; }
+  .glass { background:rgba(255,255,255,0.7); backdrop-filter:blur(12px); }
+  .sidebar-item.active { background:linear-gradient(135deg,#1e3a5f,#2563eb); color:white; box-shadow:0 4px 12px rgba(30,58,95,0.3); }
+  .sidebar-item.active .cat-code, .sidebar-item.active .pct-badge { color:white !important; }
+  .card { background:white; border-radius:16px; box-shadow:0 2px 8px rgba(15,23,42,0.06); transition:all 0.2s; }
+  .card:hover { box-shadow:0 8px 24px rgba(15,23,42,0.1); transform:translateY(-2px); }
+  .progress-bar { transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+  .gantt-bar { transition: all 0.25s; cursor:pointer; }
+  .gantt-bar:hover { filter:brightness(1.15); transform:scaleY(1.15); z-index:10; }
+  .gantt-row:hover { background:#f8fafc; }
+  .scroll-x::-webkit-scrollbar { height:10px; }
+  .scroll-x::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:5px; }
+  .scroll-x::-webkit-scrollbar-thumb:hover { background:#94a3b8; }
+  .today-line { position:absolute; top:0; bottom:0; width:2px; background:#ef4444; z-index:5; box-shadow:0 0 8px rgba(239,68,68,0.4); }
+  .today-line::before { content:"วันนี้"; position:absolute; top:-22px; left:-18px; background:#ef4444; color:white; font-size:10px; padding:2px 6px; border-radius:4px; white-space:nowrap; font-weight:600; }
+  .chip { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:500; }
+  select { cursor:pointer; }
+  .link-btn { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; font-size:11px; color:#2563eb; background:#dbeafe; }
+  .link-btn:hover { background:#bfdbfe; }
+</style>
+</head>
+<body>
+<div class="flex min-h-screen">
+
+<!-- Sidebar -->
+<aside class="w-64 bg-white border-r border-slate-200 flex-shrink-0 hidden md:flex flex-col sticky top-0 h-screen">
+  <div class="navy text-white p-5">
+    <h1 class="font-bold text-xl">HAIT Tracker</h1>
+    <p class="text-xs opacity-90 mt-1">รพ.มหาวิทยาลัยพะเยา</p>
+    <div class="mt-3 text-xs bg-white/20 rounded-lg px-3 py-2">
+      🎯 เป้าหมาย: เสร็จภายใน พ.ค. 2569
+    </div>
+  </div>
+  <nav class="flex-1 p-3 space-y-1 overflow-y-auto" id="sidebar"></nav>
+  <div class="p-3 border-t text-xs text-slate-500 space-y-0.5">
+    <p>📅 <span class="font-semibold text-slate-700">12 เม.ย. 2569</span></p>
+    <p>⏱ เหลือ <span class="font-bold text-red-600" id="daysLeft">~49</span> วัน</p>
+  </div>
+</aside>
+
+<!-- Mobile bar -->
+<div class="md:hidden fixed top-0 left-0 right-0 navy text-white p-3 flex justify-between items-center z-20 shadow-lg">
+  <span class="font-bold">HAIT Tracker</span>
+  <select id="mobileNav" onchange="selectView(this.value)" class="bg-white text-slate-800 text-sm rounded-lg px-3 py-1.5"></select>
+</div>
+
+<main class="flex-1 p-4 md:p-8 overflow-x-hidden mt-14 md:mt-0">
+  <div id="content"></div>
+</main>
+</div>
+
+<script>
+const CATEGORIES = [
+  { id:"dashboard", icon:"📊", code:"DASHBOARD", name:"ภาพรวม",                color:"#1e3a5f" },
+  { id:"gantt",     icon:"📅", code:"TIMELINE",  name:"Gantt Chart",           color:"#1e3a5f" },
+  { id:"refs",      icon:"📚", code:"RESOURCES", name:"เอกสารอ้างอิง",          color:"#1e3a5f" },
+  { id:1, icon:"📋", code:"HAIT 1", name:"แผนแม่บท IT",          color:"#1e3a5f" },
+  { id:2, icon:"⚠️", code:"HAIT 2", name:"การจัดการความเสี่ยง",    color:"#2563eb" },
+  { id:3, icon:"🔒", code:"HAIT 3", name:"ความมั่นคงปลอดภัย",       color:"#dc2626" },
+  { id:4, icon:"🛠", code:"HAIT 4", name:"Service & Incident",     color:"#ea580c" },
+  { id:5, icon:"📑", code:"HAIT 5", name:"คุณภาพข้อมูล",          color:"#16a34a" },
+  { id:6, icon:"🧩", code:"HAIT 6", name:"ออกแบบระบบ",            color:"#7c3aed" },
+  { id:7, icon:"⚙️", code:"HAIT 7", name:"Capacity & Competency", color:"#0891b2" },
+];
+
+const STATUSES = {
+  not_started:    { label:"ยังไม่เริ่ม",    color:"#94a3b8", bg:"bg-slate-100 text-slate-700" },
+  in_progress:    { label:"กำลังดำเนินการ", color:"#f59e0b", bg:"bg-amber-100 text-amber-800" },
+  completed:      { label:"เสร็จแล้ว",      color:"#10b981", bg:"bg-emerald-100 text-emerald-800" },
+  needs_revision: { label:"ต้องปรับปรุง",   color:"#ef4444", bg:"bg-red-100 text-red-800" },
+};
+
+// ผู้รับผิดชอบประจำ รพ.
+const OWNERS = ["CIO","หัวหน้า IT","IT Security","IT Infrastructure","IT Support","Developer","เวชระเบียน","HR","แผนยุทธศาสตร์","คณะทำงาน HAIT"];
+
+// ลิงก์เอกสารอ้างอิง
+const REFS = {
+  tmi: "https://tmi.or.th/การรับรอง/",
+  banbung: "https://www.banbunghospital.com/hait-2025/",
+  vachira: "https://www.vachiraphuket.go.th/hait/",
+  sarapee: "https://it.sarapeehospital.go.th/",
+  cmu: "https://w2.med.cmu.ac.th/nd/ha-it/",
+  zone1: "https://www.ciorh1.com/frontend/web/site/hait",
+  tmiDoc: "https://tmi.or.th/wp-content/uploads/2026/01/Document_HAIT_HAITStarV1.pdf",
+};
+
+// ทุก item ครบกำหนดภายใน พ.ค. 2569 (start=เมษา, end=วันในเดือน พ.ค.)
+// start,end = วันของช่วงเวลา (ตั้งแต่ 1 เม.ย. = day 1 ... 30 เม.ย. = day 30, 1 พ.ค. = day 31 ... 31 พ.ค. = day 61)
+const ITEMS = [
+  { id:"1.1.1", catId:1, title:"ข้อมูลพื้นฐานโรงพยาบาล",                        status:"completed",      owner:"แผนยุทธศาสตร์",   start:1,  end:35, ref:REFS.cmu },
+  { id:"1.1.2", catId:1, title:"สรุปแผนยุทธศาสตร์ของโรงพยาบาล",                status:"completed",      owner:"แผนยุทธศาสตร์",   start:1,  end:38, ref:REFS.cmu },
+  { id:"1.1.3", catId:1, title:"ตารางวิเคราะห์ปัจจัยความสำเร็จ IT",              status:"in_progress",    owner:"CIO",           start:5,  end:42, ref:REFS.cmu },
+  { id:"1.1.4", catId:1, title:"แผนยุทธศาสตร์ IT",                              status:"in_progress",    owner:"CIO",           start:8,  end:48, ref:REFS.cmu },
+  { id:"1.1.5", catId:1, title:"แผนปฏิบัติการ IT ปีปัจจุบัน",                   status:"not_started",    owner:"หัวหน้า IT",     start:15, end:52, ref:REFS.banbung },
+  { id:"1.1.6", catId:1, title:"ประเมินผลการดำเนินงานปีที่ผ่านมา",              status:"not_started",    owner:"CIO",           start:20, end:55, ref:REFS.banbung },
+
+  { id:"2.1.1", catId:2, title:"ประเมินจุดอ่อนช่องโหว่ประจำปี",                 status:"completed",      owner:"IT Security",    start:1,  end:33, ref:REFS.banbung },
+  { id:"2.1.2", catId:2, title:"คะแนนความเสี่ยง (PxI)",                         status:"in_progress",    owner:"IT Security",    start:8,  end:40, ref:REFS.banbung },
+  { id:"2.1.3", catId:2, title:"แผนกลยุทธ์จัดการความเสี่ยง 4 ตาราง",            status:"needs_revision", owner:"CIO",           start:10, end:45, ref:REFS.banbung },
+  { id:"2.1.4", catId:2, title:"แผนปฏิบัติการจัดการความเสี่ยง",                 status:"not_started",    owner:"IT Security",    start:15, end:55, ref:REFS.banbung },
+  { id:"2.1.5", catId:2, title:"ประเมินผลการจัดการความเสี่ยง",                  status:"not_started",    owner:"CIO",           start:25, end:58, ref:REFS.banbung },
+
+  { id:"3.1.1", catId:3, title:"นโยบายความมั่นคงปลอดภัย + PDPA",                status:"completed",      owner:"CIO",           start:1,  end:30, ref:REFS.sarapee },
+  { id:"3.1.2", catId:3, title:"ระเบียบปฏิบัติความมั่นคงปลอดภัย",               status:"completed",      owner:"IT Security",    start:1,  end:35, ref:REFS.sarapee },
+  { id:"3.1.3", catId:3, title:"ประเมินความรับรู้ของบุคลากร",                    status:"in_progress",    owner:"HR",            start:12, end:42, ref:REFS.banbung },
+  { id:"3.1.4", catId:3, title:"ประเมินความเข้าใจของบุคลากร",                   status:"not_started",    owner:"HR",            start:15, end:48, ref:REFS.banbung },
+  { id:"3.1.5", catId:3, title:"ประเมินการปฏิบัติของบุคลากร",                   status:"not_started",    owner:"HR",            status:"not_started", start:20, end:55, ref:REFS.banbung },
+  { id:"3.1.6", catId:3, title:"สรุปการปรับปรุง Data Center",                   status:"in_progress",    owner:"IT Infrastructure", start:5, end:58, ref:REFS.banbung },
+  { id:"3.2.1", catId:3, title:"HAIT Plus ข้อ A-R (18 หัวข้อ)",                 status:"not_started",    owner:"IT Security",    start:15, end:60, ref:REFS.tmiDoc },
+  { id:"3.2.2", catId:3, title:"คู่มือดูแล Data Center",                        status:"needs_revision", owner:"IT Infrastructure", start:10, end:45, ref:REFS.banbung },
+  { id:"3.2.3", catId:3, title:"คู่มือสำรองข้อมูล",                             status:"in_progress",    owner:"IT Infrastructure", start:8,  end:40, ref:REFS.banbung },
+  { id:"3.3",   catId:3, title:"แผน BCP + รายงานผลการซ้อม",                    status:"completed",      owner:"คณะทำงาน HAIT",  start:1,  end:35, ref:REFS.vachira },
+  { id:"3.4",   catId:3, title:"แผน DRP + รายงานผลการซ้อม",                    status:"in_progress",    owner:"IT Infrastructure", start:5, end:50, ref:REFS.vachira },
+
+  { id:"4.1", catId:4, title:"การจัดระบบ Service Desk",                         status:"in_progress",    owner:"IT Support",     start:1,  end:45, ref:REFS.banbung },
+  { id:"4.2", catId:4, title:"SLA + ผลการดำเนินงาน",                            status:"in_progress",    owner:"IT Support",     start:5,  end:48, ref:REFS.banbung },
+  { id:"4.3", catId:4, title:"บันทึกอุบัติการณ์ 3-6 เดือน",                      status:"not_started",    owner:"IT Support",     start:10, end:58, ref:REFS.banbung },
+  { id:"4.4", catId:4, title:"บันทึกกิจกรรม IT รายวัน",                          status:"not_started",    owner:"หัวหน้า IT",     start:10, end:60, ref:REFS.banbung },
+
+  { id:"5.1", catId:5, title:"ตรวจสอบคุณภาพเวชระเบียน OPD",                     status:"completed",      owner:"เวชระเบียน",     start:1,  end:55, ref:REFS.banbung },
+  { id:"5.2", catId:5, title:"ตรวจสอบคุณภาพเวชระเบียน IPD",                     status:"in_progress",    owner:"เวชระเบียน",     start:5,  end:58, ref:REFS.banbung },
+
+  { id:"6.1",   catId:6, title:"วิเคราะห์ระบบเดิม vs ใหม่",                      status:"not_started",    owner:"Developer",      start:15, end:48, ref:REFS.banbung },
+  { id:"6.2.1", catId:6, title:"Context Diagram",                              status:"not_started",    owner:"Developer",      start:20, end:50, ref:REFS.banbung },
+  { id:"6.2.2", catId:6, title:"Data Flow Diagram",                            status:"not_started",    owner:"Developer",      start:22, end:52, ref:REFS.banbung },
+  { id:"6.2.3", catId:6, title:"ER-Diagram",                                   status:"not_started",    owner:"Developer",      start:25, end:55, ref:REFS.banbung },
+  { id:"6.2.4", catId:6, title:"Data Dictionary",                              status:"not_started",    owner:"Developer",      start:28, end:58, ref:REFS.banbung },
+
+  { id:"7.1.1", catId:7, title:"ทะเบียน Hardware",                              status:"completed",      owner:"IT Infrastructure", start:1, end:35, ref:REFS.banbung },
+  { id:"7.1.2", catId:7, title:"ทะเบียน Software",                              status:"in_progress",    owner:"IT Infrastructure", start:5, end:40, ref:REFS.banbung },
+  { id:"7.1.3", catId:7, title:"ทะเบียน Network + Diagram",                     status:"in_progress",    owner:"IT Infrastructure", start:5, end:45, ref:REFS.banbung },
+  { id:"7.1.4", catId:7, title:"Utilization Server/Internet",                   status:"not_started",    owner:"IT Infrastructure", start:15, end:55, ref:REFS.banbung },
+  { id:"7.2.1", catId:7, title:"Competency Mapping/Dict/Template",              status:"not_started",    owner:"HR",            start:18, end:55, ref:REFS.banbung },
+  { id:"7.2.2", catId:7, title:"ประเมิน Competency + แผนพัฒนา",                status:"not_started",    owner:"CIO",           start:25, end:60, ref:REFS.banbung },
+];
+
+// Fix duplicate status key in item 3.1.5
+ITEMS.forEach(it => { if (!it.status) it.status = "not_started"; });
+
+let currentView = "dashboard";
+const TODAY = 12; // 12 เม.ย. = day 12
+
+// ==== Helpers ====
+const pctOf = items => items.length ? Math.round(items.filter(i=>i.status==="completed").length/items.length*100) : 0;
+const itemsOfCat = id => ITEMS.filter(i=>i.catId===id);
+const dayToDate = d => {
+  if (d<=30) return `${d} เม.ย.`;
+  return `${d-30} พ.ค.`;
+};
+
+// ==== Sidebar ====
+function renderSidebar() {
+  document.getElementById("sidebar").innerHTML = CATEGORIES.map(c => {
+    const isNum = typeof c.id === "number";
+    const pct = isNum ? pctOf(itemsOfCat(c.id)) : null;
+    return `
+      <div class="sidebar-item ${currentView==c.id?"active":""} rounded-xl px-3 py-2.5 cursor-pointer flex items-center gap-3 hover:bg-slate-50"
+           onclick="selectView('${c.id}')">
+        <span class="text-xl">${c.icon}</span>
+        <div class="flex-1 min-w-0">
+          <div class="cat-code text-[10px] font-mono font-bold" style="color:${c.color}">${c.code}</div>
+          <div class="font-medium text-sm truncate">${c.name}</div>
+        </div>
+        ${pct!==null ? `<span class="pct-badge text-xs font-bold" style="color:${c.color}">${pct}%</span>` : ""}
+      </div>
+    `;
+  }).join("");
+  document.getElementById("mobileNav").innerHTML = CATEGORIES.map(c =>
+    `<option value="${c.id}" ${currentView==c.id?"selected":""}>${c.icon} ${c.name}</option>`
+  ).join("");
+}
+
+function selectView(id) {
+  currentView = (id==="dashboard"||id==="gantt"||id==="refs") ? id : (parseInt(id)||id);
+  renderSidebar();
+  renderContent();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+// ==== Views ====
+function renderContent() {
+  const el = document.getElementById("content");
+  if (currentView==="dashboard") el.innerHTML = viewDashboard();
+  else if (currentView==="gantt") el.innerHTML = viewGantt();
+  else if (currentView==="refs")  el.innerHTML = viewRefs();
+  else el.innerHTML = viewCategory(currentView);
+}
+
+function viewDashboard() {
+  const total = ITEMS.length, done = ITEMS.filter(i=>i.status==="completed").length;
+  const pct = Math.round(done/total*100);
+  const counts = Object.keys(STATUSES).map(k => ({k, n:ITEMS.filter(i=>i.status===k).length, ...STATUSES[k]}));
+  const cats = CATEGORIES.filter(c => typeof c.id === "number");
+  const overdue = ITEMS.filter(i=>i.status!=="completed" && i.end<=TODAY).length;
+
+  return `
+    <div class="mb-6">
+      <h2 class="text-3xl font-bold navy-text">ภาพรวม HAIT</h2>
+      <p class="text-slate-500 mt-1">เป้าหมาย: ทุกหมวดเสร็จภายใน <span class="font-bold text-red-600">31 พฤษภาคม 2569</span></p>
+    </div>
+
+    <div class="card p-6 mb-5">
+      <div class="flex justify-between items-end mb-4">
+        <div>
+          <div class="text-sm text-slate-500">ความคืบหน้ารวม</div>
+          <div class="text-5xl font-bold navy-text">${pct}<span class="text-2xl">%</span></div>
+        </div>
+        <div class="text-right text-sm">
+          <div class="text-slate-600"><span class="font-bold text-emerald-600 text-lg">${done}</span>/${total} เสร็จ</div>
+          ${overdue>0 ? `<div class="text-red-600 font-semibold mt-1">⚠️ เลยกำหนด ${overdue} รายการ</div>` : ""}
+        </div>
+      </div>
+      <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+        <div class="h-4 progress-bar rounded-full" style="width:${pct}%;background:linear-gradient(90deg,#1e3a5f,#2563eb,#10b981)"></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      ${counts.map(c => `
+        <div class="card p-4 border-l-4" style="border-color:${c.color}">
+          <div class="text-3xl font-bold" style="color:${c.color}">${c.n}</div>
+          <div class="text-xs text-slate-600 mt-1">${c.label}</div>
+        </div>
+      `).join("")}
+    </div>
+
+    <h3 class="font-bold navy-text text-lg mb-3">ความคืบหน้ารายหมวด</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      ${cats.map(cat => {
+        const its = itemsOfCat(cat.id);
+        const p = pctOf(its);
+        return `
+          <div class="card p-4 cursor-pointer" onclick="selectView(${cat.id})">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-2xl">${cat.icon}</span>
+              <div class="flex-1">
+                <div class="text-[10px] font-mono font-bold" style="color:${cat.color}">${cat.code}</div>
+                <div class="font-semibold text-slate-800 text-sm">${cat.name}</div>
+              </div>
+              <div class="text-2xl font-bold" style="color:${cat.color}">${p}%</div>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2">
+              <div class="h-2 rounded-full progress-bar" style="width:${p}%;background:${cat.color}"></div>
+            </div>
+            <div class="text-xs text-slate-500 mt-2">${its.filter(i=>i.status==="completed").length}/${its.length} รายการ</div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function viewGantt() {
+  const colW = 22; // per day
+  const totalDays = 61;
+  return `
+    <div class="mb-6">
+      <h2 class="text-3xl font-bold navy-text">📅 Gantt Chart</h2>
+      <p class="text-slate-500 mt-1">ช่วงเวลา: 1 เม.ย. – 31 พ.ค. 2569 · เส้นแดง = วันนี้ (12 เม.ย.)</p>
+    </div>
+    <div class="card overflow-hidden">
+      <div class="scroll-x overflow-x-auto">
+        <div style="min-width:${320+colW*totalDays}px">
+          <!-- Month header -->
+          <div class="flex navy-solid text-white text-xs font-semibold border-b border-slate-700">
+            <div class="w-[320px] flex-shrink-0 p-3">รายการ</div>
+            <div style="width:${colW*30}px" class="p-2 text-center border-l border-white/30">เมษายน 2569</div>
+            <div style="width:${colW*31}px" class="p-2 text-center border-l border-white/30 bg-red-600">พฤษภาคม 2569 (deadline)</div>
+          </div>
+          <!-- Day numbers -->
+          <div class="flex bg-slate-50 border-b text-[10px] text-slate-600">
+            <div class="w-[320px] flex-shrink-0"></div>
+            ${[...Array(totalDays)].map((_,i) => {
+              const d = i<30 ? i+1 : i-29;
+              const isToday = i+1===TODAY;
+              return `<div style="width:${colW}px" class="text-center py-1 border-l border-slate-200 ${isToday?'bg-red-100 font-bold text-red-700':''}">${d}</div>`;
+            }).join("")}
+          </div>
+          <!-- Rows grouped by category -->
+          ${CATEGORIES.filter(c => typeof c.id==="number").map(cat => {
+            const its = itemsOfCat(cat.id);
+            return `
+              <div style="background:${cat.color}06">
+                <div class="flex items-center px-3 py-2 font-semibold text-sm border-y" style="background:${cat.color}15;color:${cat.color}">
+                  <span class="mr-2">${cat.icon}</span>${cat.code} · ${cat.name}
+                </div>
+                ${its.map(it => {
+                  const st = STATUSES[it.status];
+                  return `
+                    <div class="gantt-row flex items-center border-b border-slate-100">
+                      <div class="w-[320px] flex-shrink-0 p-2.5 pr-3">
+                        <div class="font-medium text-slate-800 text-xs truncate" title="${it.title}">
+                          <span class="text-[10px] text-slate-400 font-mono mr-1">${it.id}</span>${it.title}
+                        </div>
+                        <div class="text-[10px] text-slate-500 mt-0.5 flex gap-2">
+                          <span>👤 ${it.owner}</span>
+                          <span>⏰ ${dayToDate(it.end)}</span>
+                        </div>
+                      </div>
+                      <div class="relative h-12" style="width:${colW*totalDays}px">
+                        <div class="today-line" style="left:${(TODAY-1)*colW+colW/2}px"></div>
+                        <div class="gantt-bar absolute top-3 h-6 rounded-md flex items-center px-2 text-[10px] text-white font-semibold shadow"
+                             style="left:${(it.start-1)*colW+1}px; width:${(it.end-it.start+1)*colW-2}px; background:${st.color}"
+                             title="${it.title} | ${dayToDate(it.start)} - ${dayToDate(it.end)} | ${st.label}">
+                          ${(it.end-it.start+1)*colW > 80 ? st.label : ""}
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    </div>
+    <div class="card mt-4 p-4 flex flex-wrap gap-4 text-sm items-center">
+      <span class="font-semibold navy-text">สถานะ:</span>
+      ${Object.values(STATUSES).map(s => `
+        <div class="flex items-center gap-2"><div class="w-4 h-4 rounded" style="background:${s.color}"></div><span>${s.label}</span></div>
+      `).join("")}
+      <div class="flex items-center gap-2 ml-auto"><div class="w-0.5 h-4 bg-red-500"></div><span class="text-xs">เส้นแดง = วันนี้</span></div>
+    </div>
+  `;
+}
+
+function viewCategory(catId) {
+  const cat = CATEGORIES.find(c=>c.id===catId);
+  const its = itemsOfCat(catId);
+  const pct = pctOf(its);
+  return `
+    <div class="mb-5">
+      <div class="flex items-center gap-3 mb-1">
+        <span class="text-3xl">${cat.icon}</span>
+        <span class="text-xs font-mono px-2 py-1 rounded" style="background:${cat.color}20;color:${cat.color}">${cat.code}</span>
+        <h2 class="text-2xl md:text-3xl font-bold navy-text">${cat.name}</h2>
+      </div>
+      <p class="text-slate-500 text-sm">${its.length} รายการ · ${its.filter(i=>i.status==="completed").length} เสร็จแล้ว</p>
+    </div>
+
+    <div class="card p-5 mb-5">
+      <div class="flex justify-between mb-2">
+        <span class="text-sm text-slate-600">ความคืบหน้า</span>
+        <span class="font-bold" style="color:${cat.color}">${pct}%</span>
+      </div>
+      <div class="w-full bg-slate-100 rounded-full h-3">
+        <div class="h-3 rounded-full progress-bar" style="width:${pct}%;background:${cat.color}"></div>
+      </div>
+    </div>
+
+    <div class="space-y-2">
+      ${its.map(it => {
+        const st = STATUSES[it.status];
+        const overdue = it.status!=="completed" && it.end<=TODAY;
+        return `
+          <div class="card p-4 ${overdue?'border-2 border-red-200':''}">
+            <div class="flex items-start gap-3 mb-3">
+              <span class="text-xs font-mono px-2 py-1 rounded flex-shrink-0 mt-0.5" style="background:${cat.color}15;color:${cat.color}">${it.id}</span>
+              <div class="flex-1 min-w-0">
+                <div class="font-semibold text-slate-800">${it.title} ${overdue?'<span class="text-red-600 text-xs ml-1">⚠️ เลยกำหนด</span>':''}</div>
+                <div class="flex flex-wrap gap-2 mt-2 text-xs">
+                  <span class="chip bg-slate-100 text-slate-700">👤 ${it.owner}</span>
+                  <span class="chip bg-blue-100 text-blue-700">⏰ ครบกำหนด ${dayToDate(it.end)} 69</span>
+                  <span class="chip bg-purple-100 text-purple-700">📅 ${dayToDate(it.start)} - ${dayToDate(it.end)}</span>
+                  ${it.ref?`<a href="${it.ref}" target="_blank" class="link-btn">📎 ตัวอย่าง</a>`:''}
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 items-center pt-3 border-t border-slate-100">
+              <label class="text-xs text-slate-500 font-semibold">สถานะ:</label>
+              <select onchange="updateStatus('${it.id}','status',this.value)" class="text-xs rounded-lg px-2 py-1.5 border border-slate-300 font-medium ${st.bg}">
+                ${Object.entries(STATUSES).map(([k,v])=>`<option value="${k}" ${k===it.status?'selected':''}>${v.label}</option>`).join("")}
+              </select>
+              <label class="text-xs text-slate-500 font-semibold ml-2">ผู้รับผิดชอบ:</label>
+              <select onchange="updateStatus('${it.id}','owner',this.value)" class="text-xs rounded-lg px-2 py-1.5 border border-slate-300">
+                ${OWNERS.map(o=>`<option ${o===it.owner?'selected':''}>${o}</option>`).join("")}
+              </select>
+            </div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function viewRefs() {
+  const links = [
+    { name:"รพ.บ้านบึง ชลบุรี", desc:"⭐ Reference หลัก – เผยแพร่เอกสารครบ 7 หมวด พร้อมดาวน์โหลด", url:REFS.banbung, tag:"7 หมวดครบ" },
+    { name:"รพ.วชิระภูเก็ต", desc:"BCP เอกสารสำคัญ + ตารางค่าใช้จ่ายกรณีระบบล่ม", url:REFS.vachira, tag:"BCP/DRP" },
+    { name:"รพ.สารภี เชียงใหม่", desc:"คำสั่งแต่งตั้งคณะทำงาน + Presentation + Cybersecurity", url:REFS.sarapee, tag:"คำสั่ง+PPT" },
+    { name:"รพ.มหาราชนครเชียงใหม่ (สวนดอก)", desc:"แผนแม่บท IT เชิงลึก – ยุทธศาสตร์สู่แผนปฏิบัติการ", url:REFS.cmu, tag:"หมวด 1" },
+    { name:"สารสนเทศเขตสุขภาพที่ 1", desc:"⭐ พะเยาอยู่เขตนี้ – แบบประเมินตนเอง + สรุปผลตรวจเยี่ยม 1–7", url:REFS.zone1, tag:"เขต 1" },
+    { name:"เอกสาร TMI HAIT/HAIT Star (ทางการ)", desc:"เอกสารจัดทำการประเมิน HAIT (Document_HAIT_HAITStarV1)", url:REFS.tmiDoc, tag:"ทางการ" },
+    { name:"TMI – หน้าการรับรอง", desc:"หลักเกณฑ์ แบบคำขอ กำหนดการตรวจเยี่ยม", url:REFS.tmi, tag:"TMI" },
+  ];
+  return `
+    <div class="mb-6">
+      <h2 class="text-3xl font-bold navy-text">📚 เอกสารอ้างอิง</h2>
+      <p class="text-slate-500 mt-1">แหล่งข้อมูลและตัวอย่าง รพ. ที่ผ่าน HAIT</p>
+    </div>
+    <div class="grid gap-3">
+      ${links.map(l => `
+        <a href="${l.url}" target="_blank" class="card p-5 block">
+          <div class="flex justify-between items-start gap-3 mb-1">
+            <div class="font-bold text-slate-800">${l.name}</div>
+            <span class="chip bg-blue-100 text-blue-700">${l.tag}</span>
+          </div>
+          <p class="text-sm text-slate-600">${l.desc}</p>
+          <div class="text-xs text-blue-600 mt-2 truncate">${l.url}</div>
+        </a>
+      `).join("")}
+    </div>
+  `;
+}
+
+function updateStatus(id, field, val) {
+  const it = ITEMS.find(i=>i.id===id);
+  if (it) {
+    it[field] = val;
+    renderSidebar();
+    renderContent();
+  }
+}
+
+renderSidebar();
+renderContent();
+</script>
+</body>
+</html>

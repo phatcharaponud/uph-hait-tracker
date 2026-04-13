@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAIT Tracking System - รพ.มหาวิทยาลัยพะเยา</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Sarabun', sans-serif; background: #f1f5f9; }
+  .navy { background-color: #1e3a5f; }
+  .navy-text { color: #1e3a5f; }
+  .progress-bar { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+</style>
+</head>
+<body>
+<div class="min-h-screen">
+
+<!-- Header -->
+<header class="navy text-white shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+    <div>
+      <h1 class="text-xl md:text-2xl font-bold">ระบบติดตามงาน HAIT</h1>
+      <p class="text-xs md:text-sm opacity-80">โรงพยาบาลมหาวิทยาลัยพะเยา | Hospital IT Accreditation</p>
+    </div>
+    <div class="text-right text-sm">
+      <p class="font-semibold">วันที่ 12 เมษายน 2569</p>
+      <p class="text-xs opacity-80">Prototype v0.1</p>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 py-6">
+
+  <!-- Overall Progress Card -->
+  <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="text-lg font-bold navy-text">ความคืบหน้าโดยรวม</h2>
+      <span id="overallPct" class="text-3xl font-bold navy-text">0%</span>
+    </div>
+    <div class="w-full bg-slate-200 rounded-full h-4 overflow-hidden">
+      <div id="overallBar" class="navy h-4 rounded-full progress-bar" style="width: 0%"></div>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5" id="statusCounts"></div>
+  </div>
+
+  <!-- Category Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" id="categoryGrid"></div>
+
+  <!-- Checklist -->
+  <div class="bg-white rounded-xl shadow-md p-6">
+    <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+      <h2 class="text-lg font-bold navy-text">รายการเอกสาร/กิจกรรม</h2>
+      <div class="flex gap-2 flex-wrap">
+        <button onclick="filterCat('all')" class="filter-btn px-3 py-1 rounded-full text-sm bg-slate-800 text-white" data-cat="all">ทั้งหมด</button>
+        <button onclick="filterCat(1)" class="filter-btn px-3 py-1 rounded-full text-sm bg-slate-100" data-cat="1">หมวด 1</button>
+        <button onclick="filterCat(2)" class="filter-btn px-3 py-1 rounded-full text-sm bg-slate-100" data-cat="2">หมวด 2</button>
+        <button onclick="filterCat(3)" class="filter-btn px-3 py-1 rounded-full text-sm bg-slate-100" data-cat="3">หมวด 3</button>
+        <button onclick="filterCat(4)" class="filter-btn px-3 py-1 rounded-full text-sm bg-slate-100" data-cat="4">หมวด 4</button>
+        <button onclick="filterCat(5)" class="filter-btn px-3 py-1 rounded-full text-sm bg-slate-100" data-cat="5">หมวด 5</button>
+        <button onclick="filterCat(6)" class="filter-btn px-3 py-1 rounded-full text-sm bg-slate-100" data-cat="6">หมวด 6</button>
+        <button onclick="filterCat(7)" class="filter-btn px-3 py-1 rounded-full text-sm bg-slate-100" data-cat="7">หมวด 7</button>
+      </div>
+    </div>
+    <div id="checklistBody" class="space-y-2"></div>
+  </div>
+</main>
+
+<footer class="text-center text-xs text-slate-500 py-6">
+  🎨 Prototype — ยังไม่เชื่อมต่อ backend | ข้อมูลอ้างอิงจาก TMI (tmi.or.th)
+</footer>
+</div>
+
+<script>
+// ===== Data =====
+const CATEGORIES = [
+  { id: 1, code: "HAIT1", name: "แผนแม่บท IT", color: "#1e3a5f" },
+  { id: 2, code: "HAIT2", name: "การจัดการความเสี่ยง", color: "#2563eb" },
+  { id: 3, code: "HAIT3", name: "ความมั่นคงปลอดภัย", color: "#dc2626" },
+  { id: 4, code: "HAIT4", name: "Service & Incident", color: "#ea580c" },
+  { id: 5, code: "HAIT5", name: "คุณภาพข้อมูล", color: "#16a34a" },
+  { id: 6, code: "HAIT6", name: "ออกแบบระบบ", color: "#7c3aed" },
+  { id: 7, code: "HAIT7", name: "Capacity & Competency", color: "#0891b2" },
+];
+
+const STATUSES = {
+  not_started: { label: "ยังไม่เริ่ม", color: "bg-slate-200 text-slate-700" },
+  in_progress: { label: "กำลังดำเนินการ", color: "bg-amber-100 text-amber-800" },
+  completed: { label: "เสร็จแล้ว", color: "bg-emerald-100 text-emerald-800" },
+  needs_revision: { label: "ต้องปรับปรุง", color: "bg-red-100 text-red-800" },
+};
+
+// Sample items (ย่อจาก haitChecklist.js ให้พอดู prototype)
+const ITEMS = [
+  { id: "1.1.1", catId: 1, title: "ข้อมูลพื้นฐานโรงพยาบาล", status: "completed" },
+  { id: "1.1.2", catId: 1, title: "สรุปแผนยุทธศาสตร์ของโรงพยาบาล", status: "completed" },
+  { id: "1.1.3", catId: 1, title: "ตารางวิเคราะห์ปัจจัยความสำเร็จ IT", status: "in_progress" },
+  { id: "1.1.4", catId: 1, title: "แผนยุทธศาสตร์ IT", status: "in_progress" },
+  { id: "1.1.5", catId: 1, title: "แผนปฏิบัติการ IT ปีปัจจุบัน", status: "not_started" },
+  { id: "1.1.6", catId: 1, title: "ประเมินผลการดำเนินงานปีที่ผ่านมา", status: "not_started" },
+  { id: "2.1.1", catId: 2, title: "ผลการประเมินจุดอ่อนช่องโหว่ประจำปี", status: "completed" },
+  { id: "2.1.2", catId: 2, title: "ผลการประเมินคะแนนความเสี่ยง (PxI)", status: "in_progress" },
+  { id: "2.1.3", catId: 2, title: "แผนกลยุทธ์การจัดการความเสี่ยง 4 ตาราง", status: "needs_revision" },
+  { id: "2.1.4", catId: 2, title: "แผนปฏิบัติการจัดการความเสี่ยงปีปัจจุบัน", status: "not_started" },
+  { id: "2.1.5", catId: 2, title: "ประเมินผลการจัดการความเสี่ยงปีที่ผ่านมา", status: "not_started" },
+  { id: "3.1.1", catId: 3, title: "นโยบายความมั่นคงปลอดภัย + PDPA", status: "completed" },
+  { id: "3.1.2", catId: 3, title: "ระเบียบปฏิบัติด้านความมั่นคงปลอดภัย", status: "completed" },
+  { id: "3.1.3", catId: 3, title: "ประเมินความรับรู้ของบุคลากร", status: "in_progress" },
+  { id: "3.1.4", catId: 3, title: "ประเมินความเข้าใจของบุคลากร", status: "not_started" },
+  { id: "3.1.5", catId: 3, title: "ประเมินการปฏิบัติของบุคลากร", status: "not_started" },
+  { id: "3.1.6", catId: 3, title: "ปรับปรุง Data Center ตามมาตรฐาน HAIT", status: "in_progress" },
+  { id: "3.2.1", catId: 3, title: "HAIT Plus ข้อ A-R (18 หัวข้อ)", status: "not_started" },
+  { id: "3.2.2", catId: 3, title: "คู่มือดูแล Data Center", status: "needs_revision" },
+  { id: "3.2.3", catId: 3, title: "คู่มือการสำรองข้อมูล", status: "in_progress" },
+  { id: "3.3", catId: 3, title: "แผน BCP + รายงานผลการซ้อม", status: "completed" },
+  { id: "3.4", catId: 3, title: "แผน DRP + รายงานผลการซ้อม", status: "in_progress" },
+  { id: "4.1", catId: 4, title: "การจัดระบบ Service Desk", status: "in_progress" },
+  { id: "4.2", catId: 4, title: "SLA และผลการดำเนินงาน", status: "in_progress" },
+  { id: "4.3", catId: 4, title: "บันทึกอุบัติการณ์ 3-6 เดือน", status: "not_started" },
+  { id: "4.4", catId: 4, title: "บันทึกกิจกรรมประจำวัน IT", status: "not_started" },
+  { id: "5.1", catId: 5, title: "ตรวจสอบคุณภาพเวชระเบียน OPD", status: "completed" },
+  { id: "5.2", catId: 5, title: "ตรวจสอบคุณภาพเวชระเบียน IPD", status: "in_progress" },
+  { id: "6.1", catId: 6, title: "วิเคราะห์ระบบเดิมเทียบระบบใหม่", status: "not_started" },
+  { id: "6.2.1", catId: 6, title: "Context Diagram", status: "not_started" },
+  { id: "6.2.2", catId: 6, title: "Data Flow Diagram", status: "not_started" },
+  { id: "6.2.3", catId: 6, title: "ER-Diagram", status: "not_started" },
+  { id: "6.2.4", catId: 6, title: "Data Dictionary", status: "not_started" },
+  { id: "7.1.1", catId: 7, title: "ทะเบียน Hardware", status: "completed" },
+  { id: "7.1.2", catId: 7, title: "ทะเบียน Software", status: "in_progress" },
+  { id: "7.1.3", catId: 7, title: "ทะเบียน Network + Diagram", status: "in_progress" },
+  { id: "7.1.4", catId: 7, title: "Utilization Server/Intranet/Internet", status: "not_started" },
+  { id: "7.2.1", catId: 7, title: "Competency Mapping/Dictionary/Template", status: "not_started" },
+  { id: "7.2.2", catId: 7, title: "ประเมิน Competency + แผนพัฒนา", status: "not_started" },
+];
+
+let currentFilter = 'all';
+
+// ===== Rendering =====
+function renderOverall() {
+  const total = ITEMS.length;
+  const done = ITEMS.filter(i => i.status === 'completed').length;
+  const pct = Math.round((done/total)*100);
+  document.getElementById('overallPct').textContent = pct + '%';
+  document.getElementById('overallBar').style.width = pct + '%';
+
+  const counts = {
+    completed: ITEMS.filter(i => i.status === 'completed').length,
+    in_progress: ITEMS.filter(i => i.status === 'in_progress').length,
+    needs_revision: ITEMS.filter(i => i.status === 'needs_revision').length,
+    not_started: ITEMS.filter(i => i.status === 'not_started').length,
+  };
+  document.getElementById('statusCounts').innerHTML = `
+    <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-center">
+      <div class="text-2xl font-bold text-emerald-700">${counts.completed}</div>
+      <div class="text-xs text-emerald-600 mt-1">เสร็จแล้ว</div>
+    </div>
+    <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+      <div class="text-2xl font-bold text-amber-700">${counts.in_progress}</div>
+      <div class="text-xs text-amber-600 mt-1">กำลังดำเนินการ</div>
+    </div>
+    <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+      <div class="text-2xl font-bold text-red-700">${counts.needs_revision}</div>
+      <div class="text-xs text-red-600 mt-1">ต้องปรับปรุง</div>
+    </div>
+    <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+      <div class="text-2xl font-bold text-slate-700">${counts.not_started}</div>
+      <div class="text-xs text-slate-600 mt-1">ยังไม่เริ่ม</div>
+    </div>
+  `;
+}
+
+function renderCategories() {
+  const grid = document.getElementById('categoryGrid');
+  grid.innerHTML = CATEGORIES.map(cat => {
+    const items = ITEMS.filter(i => i.catId === cat.id);
+    const done = items.filter(i => i.status === 'completed').length;
+    const pct = items.length ? Math.round((done/items.length)*100) : 0;
+    return `
+      <div class="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition cursor-pointer"
+           onclick="filterCat(${cat.id})">
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <div class="text-xs font-semibold" style="color:${cat.color}">${cat.code}</div>
+            <div class="font-bold text-slate-800 text-sm">${cat.name}</div>
+          </div>
+          <div class="text-2xl font-bold" style="color:${cat.color}">${pct}%</div>
+        </div>
+        <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+          <div class="h-2 progress-bar" style="width:${pct}%; background:${cat.color}"></div>
+        </div>
+        <div class="text-xs text-slate-500 mt-2">${done}/${items.length} รายการ</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderChecklist() {
+  const body = document.getElementById('checklistBody');
+  const filtered = currentFilter === 'all' ? ITEMS : ITEMS.filter(i => i.catId === currentFilter);
+  if (filtered.length === 0) {
+    body.innerHTML = '<p class="text-center text-slate-400 py-8">ไม่มีรายการ</p>';
+    return;
+  }
+  body.innerHTML = filtered.map(item => {
+    const cat = CATEGORIES.find(c => c.id === item.catId);
+    const st = STATUSES[item.status];
+    return `
+      <div class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+        <div class="flex-shrink-0 w-14 text-center">
+          <span class="inline-block px-2 py-1 rounded text-xs font-mono" style="background:${cat.color}15; color:${cat.color}">${item.id}</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-slate-800 text-sm truncate">${item.title}</div>
+          <div class="text-xs text-slate-500">${cat.code} · ${cat.name}</div>
+        </div>
+        <select onchange="updateStatus('${item.id}', this.value)"
+                class="text-xs rounded px-2 py-1 border border-slate-300 ${st.color} font-medium">
+          ${Object.entries(STATUSES).map(([k,v]) =>
+            `<option value="${k}" ${k===item.status?'selected':''}>${v.label}</option>`
+          ).join('')}
+        </select>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterCat(catId) {
+  currentFilter = catId;
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    if (btn.dataset.cat == catId) {
+      btn.className = 'filter-btn px-3 py-1 rounded-full text-sm bg-slate-800 text-white';
+    } else {
+      btn.className = 'filter-btn px-3 py-1 rounded-full text-sm bg-slate-100';
+    }
+  });
+  renderChecklist();
+}
+
+function updateStatus(itemId, newStatus) {
+  const item = ITEMS.find(i => i.id === itemId);
+  if (item) {
+    item.status = newStatus;
+    renderOverall();
+    renderCategories();
+    renderChecklist();
+  }
+}
+
+// Init
+renderOverall();
+renderCategories();
+renderChecklist();
+</script>
+</body>
+</html>

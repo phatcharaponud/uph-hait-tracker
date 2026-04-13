@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAIT Tracker v2 - รพ.มหาวิทยาลัยพะเยา</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Sarabun', sans-serif; background: #f8fafc; }
+  .navy { background-color: #1e3a5f; }
+  .navy-text { color: #1e3a5f; }
+  .sidebar-item.active { background: #1e3a5f; color: white; }
+  .sidebar-item.active .cat-code { color: #93c5fd; }
+  .gantt-row:hover { background: #f1f5f9; }
+  .gantt-bar { transition: all 0.3s; cursor: pointer; }
+  .gantt-bar:hover { filter: brightness(1.1); transform: scaleY(1.2); }
+  .progress-bar { transition: width 0.6s ease; }
+  .scroll-x::-webkit-scrollbar { height: 8px; }
+  .scroll-x::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="flex min-h-screen">
+
+<!-- ========== SIDEBAR ========== -->
+<aside class="w-64 bg-white shadow-lg flex-shrink-0 hidden md:flex flex-col">
+  <div class="navy text-white p-4">
+    <h1 class="font-bold text-lg">HAIT Tracker</h1>
+    <p class="text-xs opacity-80 mt-1">รพ.มหาวิทยาลัยพะเยา</p>
+  </div>
+  <nav class="flex-1 p-3 space-y-1" id="sidebar"></nav>
+  <div class="p-3 border-t text-xs text-slate-500">
+    <p>📅 12 เม.ย. 2569</p>
+    <p class="mt-1">Prototype v0.2</p>
+  </div>
+</aside>
+
+<!-- Mobile top bar -->
+<div class="md:hidden fixed top-0 left-0 right-0 navy text-white p-3 flex justify-between items-center z-20">
+  <span class="font-bold">HAIT Tracker</span>
+  <select id="mobileNav" onchange="selectView(this.value)" class="bg-white text-slate-800 text-sm rounded px-2 py-1"></select>
+</div>
+
+<!-- ========== MAIN ========== -->
+<main class="flex-1 p-4 md:p-6 overflow-x-hidden md:ml-0 mt-14 md:mt-0">
+  <div id="content"></div>
+</main>
+
+</div>
+
+<script>
+// ===== Data =====
+const CATEGORIES = [
+  { id: "dashboard", code: "📊", name: "ภาพรวม", color: "#1e3a5f" },
+  { id: "gantt", code: "📅", name: "Gantt Chart", color: "#1e3a5f" },
+  { id: 1, code: "HAIT 1", name: "แผนแม่บท IT", color: "#1e3a5f" },
+  { id: 2, code: "HAIT 2", name: "การจัดการความเสี่ยง", color: "#2563eb" },
+  { id: 3, code: "HAIT 3", name: "ความมั่นคงปลอดภัย", color: "#dc2626" },
+  { id: 4, code: "HAIT 4", name: "Service & Incident", color: "#ea580c" },
+  { id: 5, code: "HAIT 5", name: "คุณภาพข้อมูล", color: "#16a34a" },
+  { id: 6, code: "HAIT 6", name: "ออกแบบระบบ", color: "#7c3aed" },
+  { id: 7, code: "HAIT 7", name: "Capacity & Competency", color: "#0891b2" },
+];
+
+const STATUSES = {
+  not_started:    { label: "ยังไม่เริ่ม",      color: "#94a3b8", bg: "bg-slate-100 text-slate-700" },
+  in_progress:    { label: "กำลังดำเนินการ",   color: "#f59e0b", bg: "bg-amber-100 text-amber-800" },
+  completed:      { label: "เสร็จแล้ว",        color: "#10b981", bg: "bg-emerald-100 text-emerald-800" },
+  needs_revision: { label: "ต้องปรับปรุง",     color: "#ef4444", bg: "bg-red-100 text-red-800" },
+};
+
+// วันที่ใช้สมมติ (พ.ศ. 2569) — start/end เดือนที่ (1-12)
+const ITEMS = [
+  { id:"1.1.1", catId:1, title:"ข้อมูลพื้นฐานโรงพยาบาล", status:"completed", owner:"IT", start:1, end:2 },
+  { id:"1.1.2", catId:1, title:"สรุปแผนยุทธศาสตร์ รพ.", status:"completed", owner:"แผนฯ", start:1, end:2 },
+  { id:"1.1.3", catId:1, title:"ตารางวิเคราะห์ปัจจัยความสำเร็จ IT", status:"in_progress", owner:"IT+แผนฯ", start:2, end:4 },
+  { id:"1.1.4", catId:1, title:"แผนยุทธศาสตร์ IT", status:"in_progress", owner:"CIO", start:3, end:5 },
+  { id:"1.1.5", catId:1, title:"แผนปฏิบัติการ IT ปีปัจจุบัน", status:"not_started", owner:"IT", start:4, end:6 },
+  { id:"1.1.6", catId:1, title:"ประเมินผลปีที่ผ่านมา", status:"not_started", owner:"CIO", start:5, end:6 },
+
+  { id:"2.1.1", catId:2, title:"ประเมินจุดอ่อนช่องโหว่ประจำปี", status:"completed", owner:"IT Sec", start:2, end:3 },
+  { id:"2.1.2", catId:2, title:"คะแนนความเสี่ยง (PxI)", status:"in_progress", owner:"IT Sec", start:3, end:4 },
+  { id:"2.1.3", catId:2, title:"แผนกลยุทธ์จัดการความเสี่ยง 4 ตาราง", status:"needs_revision", owner:"CIO", start:3, end:5 },
+  { id:"2.1.4", catId:2, title:"แผนปฏิบัติการจัดการความเสี่ยง", status:"not_started", owner:"IT Sec", start:5, end:7 },
+  { id:"2.1.5", catId:2, title:"ประเมินผลการจัดการความเสี่ยง", status:"not_started", owner:"CIO", start:6, end:7 },
+
+  { id:"3.1.1", catId:3, title:"นโยบายความมั่นคงปลอดภัย + PDPA", status:"completed", owner:"CIO", start:1, end:3 },
+  { id:"3.1.2", catId:3, title:"ระเบียบปฏิบัติความมั่นคงปลอดภัย", status:"completed", owner:"IT Sec", start:2, end:4 },
+  { id:"3.1.3", catId:3, title:"ประเมินความรับรู้ของบุคลากร", status:"in_progress", owner:"HR+IT", start:4, end:5 },
+  { id:"3.1.4", catId:3, title:"ประเมินความเข้าใจของบุคลากร", status:"not_started", owner:"HR+IT", start:5, end:6 },
+  { id:"3.1.5", catId:3, title:"ประเมินการปฏิบัติของบุคลากร", status:"not_started", owner:"HR+IT", start:6, end:7 },
+  { id:"3.1.6", catId:3, title:"ปรับปรุง Data Center", status:"in_progress", owner:"IT Infra", start:2, end:8 },
+  { id:"3.2.1", catId:3, title:"HAIT Plus ข้อ A-R (18 หัวข้อ)", status:"not_started", owner:"IT Sec", start:5, end:9 },
+  { id:"3.2.2", catId:3, title:"คู่มือดูแล Data Center", status:"needs_revision", owner:"IT Infra", start:4, end:6 },
+  { id:"3.2.3", catId:3, title:"คู่มือสำรองข้อมูล", status:"in_progress", owner:"IT Infra", start:3, end:5 },
+  { id:"3.3",   catId:3, title:"แผน BCP + ซ้อม", status:"completed", owner:"IT+บริหาร", start:1, end:4 },
+  { id:"3.4",   catId:3, title:"แผน DRP + ซ้อม", status:"in_progress", owner:"IT Infra", start:3, end:7 },
+
+  { id:"4.1", catId:4, title:"Service Desk", status:"in_progress", owner:"IT Support", start:1, end:5 },
+  { id:"4.2", catId:4, title:"SLA + ผลดำเนินงาน", status:"in_progress", owner:"IT Support", start:2, end:6 },
+  { id:"4.3", catId:4, title:"บันทึกอุบัติการณ์ 3-6 เดือน", status:"not_started", owner:"IT Support", start:4, end:9 },
+  { id:"4.4", catId:4, title:"บันทึกกิจกรรม IT รายวัน", status:"not_started", owner:"IT Team", start:4, end:9 },
+
+  { id:"5.1", catId:5, title:"ตรวจสอบคุณภาพเวชระเบียน OPD", status:"completed", owner:"เวชระเบียน", start:1, end:12 },
+  { id:"5.2", catId:5, title:"ตรวจสอบคุณภาพเวชระเบียน IPD", status:"in_progress", owner:"เวชระเบียน", start:2, end:12 },
+
+  { id:"6.1",   catId:6, title:"วิเคราะห์ระบบเดิม vs ใหม่", status:"not_started", owner:"Dev", start:6, end:8 },
+  { id:"6.2.1", catId:6, title:"Context Diagram", status:"not_started", owner:"Dev", start:6, end:7 },
+  { id:"6.2.2", catId:6, title:"Data Flow Diagram", status:"not_started", owner:"Dev", start:7, end:8 },
+  { id:"6.2.3", catId:6, title:"ER-Diagram", status:"not_started", owner:"Dev", start:7, end:8 },
+  { id:"6.2.4", catId:6, title:"Data Dictionary", status:"not_started", owner:"Dev", start:8, end:9 },
+
+  { id:"7.1.1", catId:7, title:"ทะเบียน Hardware", status:"completed", owner:"IT Asset", start:1, end:3 },
+  { id:"7.1.2", catId:7, title:"ทะเบียน Software", status:"in_progress", owner:"IT Asset", start:2, end:4 },
+  { id:"7.1.3", catId:7, title:"ทะเบียน Network + Diagram", status:"in_progress", owner:"IT Infra", start:2, end:5 },
+  { id:"7.1.4", catId:7, title:"Utilization Server/Internet", status:"not_started", owner:"IT Infra", start:5, end:7 },
+  { id:"7.2.1", catId:7, title:"Competency Mapping/Dict/Template", status:"not_started", owner:"CIO+HR", start:6, end:8 },
+  { id:"7.2.2", catId:7, title:"ประเมิน Competency + แผนพัฒนา", status:"not_started", owner:"CIO+HR", start:8, end:10 },
+];
+
+const MONTHS = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+let currentView = "dashboard";
+
+// ===== Helpers =====
+const pctOf = items => items.length ? Math.round(items.filter(i=>i.status==="completed").length/items.length*100) : 0;
+const itemsOfCat = id => ITEMS.filter(i => i.catId === id);
+
+// ===== Sidebar =====
+function renderSidebar() {
+  const sb = document.getElementById("sidebar");
+  const mobile = document.getElementById("mobileNav");
+  sb.innerHTML = CATEGORIES.map(c => {
+    const isMain = typeof c.id === "string";
+    const pct = isMain ? "" : ` <span class="text-xs opacity-70">${pctOf(itemsOfCat(c.id))}%</span>`;
+    return `
+      <div class="sidebar-item ${currentView==c.id?"active":""} rounded-lg px-3 py-2 cursor-pointer text-sm flex justify-between items-center hover:bg-slate-100"
+           onclick="selectView('${c.id}')">
+        <div>
+          <div class="cat-code text-xs font-mono" style="color:${currentView==c.id?'#93c5fd':c.color}">${c.code}</div>
+          <div class="font-medium">${c.name}</div>
+        </div>
+        <span>${pct}</span>
+      </div>
+    `;
+  }).join("");
+  mobile.innerHTML = CATEGORIES.map(c =>
+    `<option value="${c.id}" ${currentView==c.id?"selected":""}>${c.code} · ${c.name}</option>`
+  ).join("");
+}
+
+function selectView(id) {
+  currentView = (id === "dashboard" || id === "gantt") ? id : parseInt(id) || id;
+  renderSidebar();
+  renderContent();
+}
+
+// ===== Views =====
+function renderContent() {
+  const el = document.getElementById("content");
+  if (currentView === "dashboard") el.innerHTML = viewDashboard();
+  else if (currentView === "gantt") el.innerHTML = viewGantt();
+  else el.innerHTML = viewCategory(currentView);
+}
+
+function viewDashboard() {
+  const total = ITEMS.length, done = ITEMS.filter(i=>i.status==="completed").length;
+  const pct = Math.round(done/total*100);
+  const counts = Object.keys(STATUSES).map(k => ({
+    k, n: ITEMS.filter(i=>i.status===k).length, ...STATUSES[k]
+  }));
+  const cats = CATEGORIES.filter(c => typeof c.id === "number");
+
+  return `
+    <h2 class="text-2xl font-bold navy-text mb-1">ภาพรวมความคืบหน้า HAIT</h2>
+    <p class="text-slate-500 text-sm mb-5">สรุปสถานะการเตรียมเอกสารทั้ง 7 หมวด</p>
+
+    <div class="bg-white rounded-xl shadow p-6 mb-5">
+      <div class="flex justify-between items-end mb-3">
+        <div>
+          <div class="text-sm text-slate-500">ความคืบหน้ารวม</div>
+          <div class="text-4xl font-bold navy-text">${pct}%</div>
+        </div>
+        <div class="text-right text-sm text-slate-600">
+          <div><span class="font-bold text-emerald-600">${done}</span> / ${total} รายการเสร็จแล้ว</div>
+        </div>
+      </div>
+      <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+        <div class="navy h-3 progress-bar" style="width:${pct}%"></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+      ${counts.map(c => `
+        <div class="bg-white rounded-xl shadow p-4 border-l-4" style="border-color:${c.color}">
+          <div class="text-3xl font-bold" style="color:${c.color}">${c.n}</div>
+          <div class="text-xs text-slate-600 mt-1">${c.label}</div>
+        </div>
+      `).join("")}
+    </div>
+
+    <h3 class="font-bold navy-text mb-3">ความคืบหน้าแยกตามหมวด</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      ${cats.map(cat => {
+        const its = itemsOfCat(cat.id);
+        const p = pctOf(its);
+        return `
+          <div class="bg-white rounded-xl shadow p-4 cursor-pointer hover:shadow-md transition"
+               onclick="selectView(${cat.id})">
+            <div class="flex justify-between items-center mb-2">
+              <div>
+                <div class="text-xs font-mono" style="color:${cat.color}">${cat.code}</div>
+                <div class="font-semibold text-slate-800">${cat.name}</div>
+              </div>
+              <div class="text-2xl font-bold" style="color:${cat.color}">${p}%</div>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2">
+              <div class="h-2 rounded-full progress-bar" style="width:${p}%;background:${cat.color}"></div>
+            </div>
+            <div class="text-xs text-slate-500 mt-2">${its.filter(i=>i.status==="completed").length}/${its.length} รายการ</div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function viewGantt() {
+  const colW = 70; // width per month
+  return `
+    <h2 class="text-2xl font-bold navy-text mb-1">📅 Gantt Chart — แผนการดำเนินงาน HAIT</h2>
+    <p class="text-slate-500 text-sm mb-5">ปีงบประมาณ 2569 (ต.ค. 68 - ก.ย. 69)</p>
+
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+      <div class="scroll-x overflow-x-auto">
+        <div style="min-width:${300 + colW*12}px">
+          <!-- Header -->
+          <div class="flex border-b-2 border-slate-200 navy text-white text-sm font-semibold">
+            <div class="w-[300px] flex-shrink-0 p-3">รายการ</div>
+            ${MONTHS.map(m => `<div style="width:${colW}px" class="p-3 text-center border-l border-slate-600">${m}</div>`).join("")}
+          </div>
+          <!-- Rows grouped by category -->
+          ${CATEGORIES.filter(c => typeof c.id === "number").map(cat => {
+            const its = itemsOfCat(cat.id);
+            return `
+              <div class="border-b-2" style="border-color:${cat.color}20">
+                <div class="flex items-center px-3 py-2 font-semibold text-sm" style="background:${cat.color}12; color:${cat.color}">
+                  ${cat.code} · ${cat.name} <span class="ml-2 text-xs opacity-70">(${its.length} รายการ)</span>
+                </div>
+                ${its.map(it => {
+                  const st = STATUSES[it.status];
+                  return `
+                    <div class="gantt-row flex items-center border-b border-slate-100 text-sm">
+                      <div class="w-[300px] flex-shrink-0 p-2 pr-3">
+                        <div class="font-medium text-slate-800 truncate" title="${it.title}">
+                          <span class="text-xs text-slate-400 font-mono mr-2">${it.id}</span>${it.title}
+                        </div>
+                        <div class="text-xs text-slate-500 mt-0.5">👤 ${it.owner}</div>
+                      </div>
+                      <div class="relative flex-1 h-10" style="width:${colW*12}px">
+                        ${[...Array(12)].map((_,i) => `<div class="absolute top-0 bottom-0 border-l border-slate-100" style="left:${i*colW}px;width:${colW}px"></div>`).join("")}
+                        <div class="gantt-bar absolute top-2 h-6 rounded-md flex items-center px-2 text-xs text-white font-medium shadow"
+                             style="left:${(it.start-1)*colW+2}px; width:${(it.end-it.start+1)*colW-4}px; background:${st.color}"
+                             title="${st.label} · เดือน ${it.start}-${it.end}">
+                          ${st.label}
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4 bg-white rounded-xl shadow p-4 flex flex-wrap gap-4 text-sm">
+      <span class="font-semibold navy-text">สถานะ:</span>
+      ${Object.values(STATUSES).map(s => `
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 rounded" style="background:${s.color}"></div>
+          <span>${s.label}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function viewCategory(catId) {
+  const cat = CATEGORIES.find(c => c.id === catId);
+  const its = itemsOfCat(catId);
+  const pct = pctOf(its);
+  return `
+    <div class="flex items-center gap-3 mb-1">
+      <span class="text-sm font-mono px-2 py-1 rounded" style="background:${cat.color}20; color:${cat.color}">${cat.code}</span>
+      <h2 class="text-2xl font-bold navy-text">${cat.name}</h2>
+    </div>
+    <p class="text-slate-500 text-sm mb-5">${its.length} รายการ · ${its.filter(i=>i.status==="completed").length} เสร็จแล้ว · ${pct}%</p>
+
+    <div class="bg-white rounded-xl shadow p-4 mb-5">
+      <div class="w-full bg-slate-100 rounded-full h-3">
+        <div class="h-3 rounded-full progress-bar" style="width:${pct}%;background:${cat.color}"></div>
+      </div>
+    </div>
+
+    <div class="space-y-2">
+      ${its.map(it => {
+        const st = STATUSES[it.status];
+        return `
+          <div class="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3 hover:shadow-md transition">
+            <span class="text-xs font-mono px-2 py-1 rounded flex-shrink-0" style="background:${cat.color}15;color:${cat.color}">${it.id}</span>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-slate-800 text-sm">${it.title}</div>
+              <div class="text-xs text-slate-500 mt-0.5">👤 ${it.owner} · 📅 เดือน ${it.start}-${it.end}</div>
+            </div>
+            <select onchange="updateStatus('${it.id}', this.value)"
+                    class="text-xs rounded px-2 py-1.5 border border-slate-300 font-medium ${st.bg}">
+              ${Object.entries(STATUSES).map(([k,v]) =>
+                `<option value="${k}" ${k===it.status?'selected':''}>${v.label}</option>`
+              ).join("")}
+            </select>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function updateStatus(id, newStatus) {
+  const it = ITEMS.find(i => i.id === id);
+  if (it) {
+    it.status = newStatus;
+    renderSidebar();
+    renderContent();
+  }
+}
+
+// Init
+renderSidebar();
+renderContent();
+</script>
+</body>
+</html>
