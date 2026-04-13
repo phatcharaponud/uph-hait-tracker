@@ -3,10 +3,6 @@ import { HAIT_CATEGORIES } from '../data/categories';
 import { STATUSES } from '../data/statuses';
 import { useStore } from '../store/useStore';
 import type { Item, StatusValue } from '../types';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
-  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-} from 'recharts';
 import { X, FolderOpen } from 'lucide-react';
 import { HAIT_DRIVE_FOLDER_URL } from '../data/config';
 
@@ -85,185 +81,127 @@ export default function Dashboard() {
     ...STATUSES[k],
   }));
 
-  // Chart data
-  const barData = HAIT_CATEGORIES.map((cat) => {
-    const catId = cat.id as number;
-    const catItems = items.filter((i) => i.catId === catId);
-    const catDone = catItems.filter((i) => i.status === 'completed').length;
-    const catPct = catItems.length ? Math.round((catDone / catItems.length) * 100) : 0;
-    return { name: cat.code, pct: catPct, color: cat.color, catId };
-  });
-
-  const radarData = HAIT_CATEGORIES.map((cat) => {
-    const catId = cat.id as number;
-    const catItems = items.filter((i) => i.catId === catId);
-    const catDone = catItems.filter((i) => i.status === 'completed').length;
-    const catPct = catItems.length ? Math.round((catDone / catItems.length) * 100) : 0;
-    return { subject: cat.code.replace('HAIT ', 'H'), pct: catPct, fullMark: 100 };
-  });
-
   return (
-    <div className="md:h-[calc(100vh-64px)] md:overflow-hidden">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <h2 className="text-2xl font-bold text-navy">ภาพรวม HAIT</h2>
-          <p className="text-slate-500 text-sm">
-            เป้าหมาย: ทุกหมวดเสร็จภายใน <span className="font-bold text-red-600">31 พฤษภาคม 2569</span>
-          </p>
+    <div className="md:h-[calc(100vh-64px)] md:flex md:flex-col">
+      {/* Row 1: Header + Overall Progress */}
+      <div className="shrink-0 mb-3">
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <h2 className="text-2xl font-bold text-navy">ภาพรวม HAIT</h2>
+            <p className="text-slate-500 text-sm">
+              เป้าหมาย: ทุกหมวดเสร็จภายใน <span className="font-bold text-red-600">31 พฤษภาคม 2569</span>
+            </p>
+          </div>
+          <a
+            href={HAIT_DRIVE_FOLDER_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-navy hover:shadow-md transition-shadow"
+            style={{ background: '#1e3a5f15' }}
+          >
+            <FolderOpen size={14} className="text-navy" />
+            📁 คลังเอกสาร
+          </a>
         </div>
-        <a
-          href={HAIT_DRIVE_FOLDER_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-navy hover:shadow-md transition-shadow"
-          style={{ background: '#1e3a5f15' }}
-        >
-          <FolderOpen size={14} className="text-navy" />
-          📁 คลังเอกสาร
-        </a>
+
+        <div className="bg-white rounded-2xl shadow-sm p-4">
+          <div className="flex justify-between items-end mb-3">
+            <div>
+              <div className="text-xs text-slate-500">ความคืบหน้ารวม</div>
+              <div className="text-4xl font-bold text-navy">
+                {pct}<span className="text-xl">%</span>
+              </div>
+            </div>
+            <div className="text-right text-sm">
+              <div className="text-slate-600">
+                <span className="font-bold text-emerald-600 text-lg">{done}</span>/{total} เสร็จ
+              </div>
+              {overdue > 0 && (
+                <div className="text-red-600 font-semibold text-xs mt-0.5">
+                  ⚠️ เลยกำหนด {overdue} รายการ
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+            <div
+              className="h-3 rounded-full transition-all duration-700"
+              style={{
+                width: `${pct}%`,
+                background: 'linear-gradient(90deg, #1e3a5f, #2563eb, #10b981)',
+              }}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* 2-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Left column */}
-        <div className="space-y-3">
-          {/* Overall progress */}
-          <div className="bg-white rounded-2xl shadow-sm p-4">
-            <div className="flex justify-between items-end mb-3">
-              <div>
-                <div className="text-xs text-slate-500">ความคืบหน้ารวม</div>
-                <div className="text-4xl font-bold text-navy">
-                  {pct}<span className="text-xl">%</span>
-                </div>
-              </div>
-              <div className="text-right text-sm">
-                <div className="text-slate-600">
-                  <span className="font-bold text-emerald-600 text-lg">{done}</span>/{total} เสร็จ
-                </div>
-                {overdue > 0 && (
-                  <div className="text-red-600 font-semibold text-xs mt-0.5">
-                    ⚠️ เลยกำหนด {overdue} รายการ
-                  </div>
-                )}
-              </div>
+      {/* Row 2: Status cards */}
+      <div className="shrink-0 grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+        {counts.map((c) => (
+          <div
+            key={c.key}
+            className="bg-white rounded-xl shadow-sm p-3 border-l-4 cursor-pointer hover:shadow-md transition-shadow"
+            style={{ borderColor: c.color }}
+            onClick={() => setModalStatus(c.key)}
+          >
+            <div className="text-2xl font-bold" style={{ color: c.color }}>
+              {c.n}
             </div>
-            <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-              <div
-                className="h-3 rounded-full transition-all duration-700"
-                style={{
-                  width: `${pct}%`,
-                  background: 'linear-gradient(90deg, #1e3a5f, #2563eb, #10b981)',
-                }}
-              />
-            </div>
+            <div className="text-[10px] text-slate-600 mt-0.5">{c.label}</div>
           </div>
+        ))}
+      </div>
 
-          {/* Status cards — clickable */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {counts.map((c) => (
+      {/* Row 3: Category cards — fill remaining space */}
+      <div className="flex-1 min-h-0">
+        <h3 className="font-bold text-navy text-sm mb-2">ความคืบหน้ารายหมวด</h3>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:h-[calc(100%-28px)]">
+          {HAIT_CATEGORIES.map((cat) => {
+            const catId = cat.id as number;
+            const catItems = items.filter((i) => i.catId === catId);
+            const catDone = catItems.filter((i) => i.status === 'completed').length;
+            const catPct = catItems.length
+              ? Math.round((catDone / catItems.length) * 100)
+              : 0;
+
+            return (
               <div
-                key={c.key}
-                className="bg-white rounded-xl shadow-sm p-3 border-l-4 cursor-pointer hover:shadow-md transition-shadow"
-                style={{ borderColor: c.color }}
-                onClick={() => setModalStatus(c.key)}
+                key={catId}
+                className="bg-white rounded-xl shadow-sm p-4 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between"
+                onClick={() => setView(catId)}
               >
-                <div className="text-2xl font-bold" style={{ color: c.color }}>
-                  {c.n}
-                </div>
-                <div className="text-[10px] text-slate-600 mt-0.5">{c.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Category cards — compact */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-            {HAIT_CATEGORIES.map((cat) => {
-              const catId = cat.id as number;
-              const catItems = items.filter((i) => i.catId === catId);
-              const catDone = catItems.filter((i) => i.status === 'completed').length;
-              const catPct = catItems.length
-                ? Math.round((catDone / catItems.length) * 100)
-                : 0;
-
-              return (
-                <div
-                  key={catId}
-                  className="bg-white rounded-xl shadow-sm p-3 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all"
-                  onClick={() => setView(catId)}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">{cat.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[9px] font-mono font-bold" style={{ color: cat.color }}>
+                <div>
+                  <div className="flex items-start gap-2 mb-2">
+                    <span className="text-2xl leading-none mt-0.5">{cat.icon}</span>
+                    <div className="flex-1">
+                      <div className="text-[10px] font-mono font-bold" style={{ color: cat.color }}>
                         {cat.code}
                       </div>
-                      <div className="font-medium text-slate-800 text-xs truncate">{cat.name}</div>
-                    </div>
-                    <div className="text-lg font-bold" style={{ color: cat.color }}>
-                      {catPct}%
+                      <div className="font-semibold text-slate-800 text-sm leading-snug">
+                        {cat.name}
+                      </div>
                     </div>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-1.5">
+                </div>
+                <div>
+                  <div className="flex items-end justify-between mb-1.5">
+                    <div className="text-[11px] text-slate-500">
+                      {catDone}/{catItems.length} รายการ
+                    </div>
+                    <div className="text-2xl font-bold leading-none" style={{ color: cat.color }}>
+                      {catPct}<span className="text-sm">%</span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
                     <div
-                      className="h-1.5 rounded-full transition-all duration-700"
+                      className="h-2 rounded-full transition-all duration-700"
                       style={{ width: `${catPct}%`, background: cat.color }}
                     />
                   </div>
-                  <div className="text-[10px] text-slate-500 mt-1">
-                    {catDone}/{catItems.length}
-                  </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right column — Charts */}
-        <div className="space-y-3">
-          {/* Radar chart */}
-          <div className="bg-white rounded-2xl shadow-sm p-4">
-            <h3 className="font-bold text-navy text-sm mb-2">Radar — ความคืบหน้ารายหมวด</h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <RadarChart data={radarData}>
-                <PolarGrid stroke="#e2e8f0" />
-                <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: '#64748b' }} />
-                <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 9 }} />
-                <Radar
-                  name="ความคืบหน้า"
-                  dataKey="pct"
-                  stroke="#1e3a5f"
-                  fill="#1e3a5f"
-                  fillOpacity={0.2}
-                  strokeWidth={2}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Bar chart */}
-          <div className="bg-white rounded-2xl shadow-sm p-4">
-            <h3 className="font-bold text-navy text-sm mb-2">Bar Chart — % แต่ละหมวด</h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={barData} onClick={(e) => {
-                if (e?.activePayload?.[0]?.payload?.catId) {
-                  setView(e.activePayload[0].payload.catId);
-                }
-              }}>
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
-                <Tooltip
-                  formatter={(value: number) => [`${value}%`, 'ความคืบหน้า']}
-                  contentStyle={{ borderRadius: 8, fontSize: 12 }}
-                />
-                <Bar dataKey="pct" radius={[4, 4, 0, 0]} cursor="pointer">
-                  {barData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
