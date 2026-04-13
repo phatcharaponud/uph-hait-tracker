@@ -4,7 +4,7 @@ import { STATUSES } from '../data/statuses';
 import { useStore } from '../store/useStore';
 import type { StatusValue } from '../types';
 import { ExternalLink, FolderOpen } from 'lucide-react';
-import { HAIT_DRIVE_FOLDER_URL } from '../data/config';
+import { getCategoryDriveUrl } from '../data/config';
 
 const TODAY = 12;
 
@@ -100,8 +100,7 @@ export default function CategoryView({ catId }: { catId: number }) {
   const done = catItems.filter((i) => i.status === 'completed').length;
   const pct = catItems.length ? Math.round((done / catItems.length) * 100) : 0;
 
-  // For now use main folder; Part B will add per-category URLs
-  const catDriveUrl = HAIT_DRIVE_FOLDER_URL;
+  const catDriveUrl = getCategoryDriveUrl(catId);
 
   // Clear highlight after 3 seconds
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout>>();
