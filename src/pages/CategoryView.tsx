@@ -216,40 +216,63 @@ export default function CategoryView({ catId }: { catId: number }) {
               </div>
 
               {/* Controls */}
-              <div className="flex flex-wrap gap-2 items-center pt-3 border-t border-slate-100 mb-3">
-                <label className="text-xs text-slate-500 font-semibold">สถานะ:</label>
-                <select
-                  value={it.status}
-                  onChange={(e) =>
-                    updateItemField(it.id, 'status', e.target.value)
-                  }
-                  className={`text-xs rounded-lg px-2 py-1.5 border border-slate-300 font-medium cursor-pointer ${st.bg}`}
-                >
-                  {Object.values(STATUSES).map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
+              {reportMode ? (
+                <div className="flex flex-wrap gap-2 items-center pt-3 border-t border-slate-100 mb-3">
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${st.bg}`}>
+                    {st.label}
+                  </span>
+                  <span className="text-xs text-slate-500">👤 {it.owner}</span>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2 items-center pt-3 border-t border-slate-100 mb-3">
+                  <label className="text-xs text-slate-500 font-semibold">สถานะ:</label>
+                  <select
+                    value={it.status}
+                    onChange={(e) =>
+                      updateItemField(it.id, 'status', e.target.value)
+                    }
+                    className={`text-xs rounded-lg px-2 py-1.5 border border-slate-300 font-medium cursor-pointer ${st.bg}`}
+                  >
+                    {Object.values(STATUSES).map((s) => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
 
-                <label className="text-xs text-slate-500 font-semibold ml-2">
-                  ผู้รับผิดชอบ:
-                </label>
-                <select
-                  value={it.owner}
-                  onChange={(e) => updateItemField(it.id, 'owner', e.target.value)}
-                  className="text-xs rounded-lg px-2 py-1.5 border border-slate-300 cursor-pointer"
-                >
-                  {OWNERS.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <label className="text-xs text-slate-500 font-semibold ml-2">
+                    ผู้รับผิดชอบ:
+                  </label>
+                  <select
+                    value={it.owner}
+                    onChange={(e) => updateItemField(it.id, 'owner', e.target.value)}
+                    className="text-xs rounded-lg px-2 py-1.5 border border-slate-300 cursor-pointer"
+                  >
+                    {OWNERS.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Document URL section */}
-              <DocumentUrlSection itemId={it.id} documentUrl={it.documentUrl} />
+              {reportMode ? (
+                it.documentUrl && (
+                  <a
+                    href={it.documentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 bg-navy text-white rounded-lg hover:opacity-90"
+                    style={{ background: '#1e3a5f' }}
+                  >
+                    <FolderOpen size={12} /> เปิดเอกสาร
+                  </a>
+                )
+              ) : (
+                <DocumentUrlSection itemId={it.id} documentUrl={it.documentUrl} />
+              )}
 
               {/* Reference URL section */}
               {!reportMode && it.ref && <RefUrlSection refUrl={it.ref} />}
