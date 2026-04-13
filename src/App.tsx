@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import AdminBadge from './components/AdminBadge';
@@ -7,11 +8,15 @@ import Dashboard from './pages/Dashboard';
 import GanttChart from './pages/GanttChart';
 import CategoryView from './pages/CategoryView';
 import References from './pages/References';
+import AdminManagement from './pages/AdminManagement';
 import { useStore } from './store/useStore';
 
-function App() {
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
+
+function AppContent() {
   const currentView = useStore((s) => s.currentView);
   const loadItems = useStore((s) => s.loadItems);
+  const isSuperAdmin = useStore((s) => s.isSuperAdmin);
 
   useEffect(() => {
     loadItems();
@@ -24,6 +29,10 @@ function App() {
     content = <GanttChart />;
   } else if (currentView === 'refs') {
     content = <References />;
+  } else if (currentView === 'admin' && isSuperAdmin) {
+    content = <AdminManagement />;
+  } else if (currentView === 'admin') {
+    content = <Dashboard />;
   } else {
     content = <CategoryView catId={currentView as number} />;
   }
@@ -38,6 +47,14 @@ function App() {
         {content}
       </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <AppContent />
+    </GoogleOAuthProvider>
   );
 }
 

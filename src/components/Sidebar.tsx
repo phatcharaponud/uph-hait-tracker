@@ -1,11 +1,10 @@
-import { useState } from 'react';
 import { NAV_ITEMS, HAIT_CATEGORIES } from '../data/categories';
 import { useStore, usePctOf } from '../store/useStore';
 import type { ViewId } from '../types';
 import SyncIndicator from './SyncIndicator';
-import AdminDialog from './AdminDialog';
-import { FileText, Eye, FolderOpen, Shield } from 'lucide-react';
+import { FileText, Eye, FolderOpen, LogOut, Settings } from 'lucide-react';
 import { HAIT_DRIVE_FOLDER_URL } from '../data/config';
+import { GoogleLogin } from '@react-oauth/google';
 
 function SidebarCatItem({ id, icon, code, name, color }: {
   id: ViewId; icon: string; code: string; name: string; color: string;
@@ -51,7 +50,6 @@ function SidebarCatItem({ id, icon, code, name, color }: {
 }
 
 function TodayCounter() {
-  // day 12 = 12 เม.ย. → เหลือ 61-12 = 49 วัน ถึง 31 พ.ค.
   const today = 12;
   const daysLeft = 61 - today;
 
@@ -86,32 +84,79 @@ function ReportModeToggle() {
   );
 }
 
-function AdminModeButton() {
-  const isAdmin = useStore((s) => s.isAdmin);
-  const setAdmin = useStore((s) => s.setAdmin);
-  const [showDialog, setShowDialog] = useState(false);
+function UserPanel() {
+  const user = useStore((s) => s.user);
+  const login = useStore((s) => s.login);
+  const logout = useStore((s) => s.logout);
+  const isSuperAdmin = useStore((s) => s.isSuperAdmin);
+  const setView = useStore((s) => s.setView);
+  const currentView = useStore((s) => s.currentView);
+
+  if (!user) {
+    return (
+      <div className="px-3 py-3 border-t border-slate-200">
+        <p className="text-[10px] text-slate-400 mb-2 text-center">เข้าสู่ระบบด้วย @up.ac.th</p>
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={(res) => { if (res.credential) login(res.credential); }}
+            onError={() => {}}
+            size="medium"
+            theme="outline"
+            text="signin_with"
+            shape="rectangular"
+            width="220"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const roleBadge = user.role === 'superadmin'
+    ? { label: '👑 Super Admin', cls: 'bg-gradient-to-r from-red-500 to-orange-500 text-white' }
+    : user.role === 'admin'
+    ? { label: '🛡️ Admin', cls: 'bg-blue-600 text-white' }
+    : { label: '👤 ผู้ใช้', cls: 'bg-slate-200 text-slate-600' };
 
   return (
-    <div className="px-3 py-2 border-t border-slate-200">
+    <div className="px-3 py-3 border-t border-slate-200 space-y-2">
+      <div className="flex items-center gap-2.5">
+        <img
+          src={user.picture}
+          alt={user.name}
+          className="w-8 h-8 rounded-full border border-slate-200"
+          referrerPolicy="no-referrer"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium text-slate-800 truncate">{user.name}</div>
+          <div className="text-[10px] text-slate-400 truncate">{user.email}</div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${roleBadge.cls}`}>
+          {roleBadge.label}
+        </span>
+      </div>
+      {isSuperAdmin && (
+        <button
+          onClick={() => setView('admin')}
+          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+            currentView === 'admin'
+              ? 'text-white shadow-lg'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+          style={currentView === 'admin' ? { background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' } : undefined}
+        >
+          <Settings size={14} />
+          ⚙️ จัดการสิทธิ์ Admin
+        </button>
+      )}
       <button
-        onClick={() => {
-          if (isAdmin) {
-            setAdmin(false);
-          } else {
-            setShowDialog(true);
-          }
-        }}
-        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-          isAdmin
-            ? 'bg-red-600 text-white hover:bg-red-700'
-            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-        }`}
-        title={isAdmin ? 'กำลังอยู่ในโหมด Admin — คลิกเพื่อออก' : 'เข้าสู่โหมด Admin'}
+        onClick={logout}
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all"
       >
-        <Shield size={14} />
-        {isAdmin ? '🛡️ Admin Mode (ออก)' : '🔐 Admin Mode'}
+        <LogOut size={14} />
+        ออกจากระบบ
       </button>
-      {showDialog && <AdminDialog onClose={() => setShowDialog(false)} />}
     </div>
   );
 }
@@ -145,8 +190,8 @@ export default function Sidebar() {
       {/* Report Mode Toggle */}
       <ReportModeToggle />
 
-      {/* Admin Mode */}
-      <AdminModeButton />
+      {/* User Panel (Login / Profile) */}
+      <UserPanel />
 
       {/* Drive folder */}
       <div className="px-3 py-2 border-t border-slate-200">

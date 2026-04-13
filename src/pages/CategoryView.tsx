@@ -130,8 +130,9 @@ function EditableRange({ start, end, onSaveStart, onSaveEnd }: {
 }
 
 // Mobile card
-function MobileItemCard({ it, cat, catDriveUrl }: {
+function MobileItemCard({ it, cat, catDriveUrl, canEditBasic, canEditAdvanced }: {
   it: Item; cat: (typeof HAIT_CATEGORIES)[0]; catDriveUrl: string;
+  canEditBasic: boolean; canEditAdvanced: boolean;
 }) {
   const updateItemField = useStore((s) => s.updateItemField);
   const reportMode = useStore((s) => s.reportMode);
@@ -139,6 +140,7 @@ function MobileItemCard({ it, cat, catDriveUrl }: {
   const st = STATUSES[it.status];
   const overdue = it.status !== 'completed' && it.end <= TODAY;
   const isHighlighted = highlightItemId === it.id;
+  const disabled = !canEditBasic;
 
   return (
     <div
@@ -153,12 +155,16 @@ function MobileItemCard({ it, cat, catDriveUrl }: {
         <span className="text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0" style={{ background: `${cat.color}15`, color: cat.color }}>
           {it.id}
         </span>
-        <div className="font-medium text-sm text-slate-800 flex-1">{it.title}</div>
+        <div className="font-medium text-sm text-slate-800 flex-1">
+          {canEditAdvanced ? (
+            <EditableText value={it.title} onSave={(v) => updateItemField(it.id, 'title', v)} />
+          ) : it.title}
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-2 text-xs mb-2">
         <div>
           <span className="text-slate-400">ผู้รับผิดชอบ</span>
-          {reportMode ? (
+          {reportMode || disabled ? (
             <div className="text-slate-700 font-medium">{it.owner}</div>
           ) : (
             <select value={it.owner} onChange={(e) => updateItemField(it.id, 'owner', e.target.value)}
@@ -169,7 +175,7 @@ function MobileItemCard({ it, cat, catDriveUrl }: {
         </div>
         <div>
           <span className="text-slate-400">สถานะ</span>
-          {reportMode ? (
+          {reportMode || disabled ? (
             <div className={`mt-0.5 text-[10px] px-2 py-0.5 rounded-full font-medium inline-block ${st.bg}`}>{st.label}</div>
           ) : (
             <select value={it.status} onChange={(e) => updateItemField(it.id, 'status', e.target.value as StatusValue)}
@@ -196,9 +202,14 @@ export default function CategoryView({ catId }: { catId: number }) {
   const addItem = useStore((s) => s.addItem);
   const removeItem = useStore((s) => s.removeItem);
   const reportMode = useStore((s) => s.reportMode);
+  const user = useStore((s) => s.user);
   const isAdmin = useStore((s) => s.isAdmin);
   const highlightItemId = useStore((s) => s.highlightItemId);
   const setHighlightItem = useStore((s) => s.setHighlightItem);
+
+  // Permission levels
+  const canEditBasic = !!user;  // logged in: status, owner
+  const canEditAdvanced = isAdmin; // admin: title, dates, add/remove
 
   const cat = HAIT_CATEGORIES.find((c) => c.id === catId)!;
   const catItems = items.filter((i) => i.catId === catId);
@@ -264,6 +275,13 @@ export default function CategoryView({ catId }: { catId: number }) {
         </div>
       </div>
 
+      {/* Not logged in warning */}
+      {!user && !reportMode && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-4 text-xs text-amber-700">
+          🔒 โปรดเข้าสู่ระบบเพื่อแก้ไขข้อมูล
+        </div>
+      )}
+
       {/* Desktop Table */}
       <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -276,9 +294,9 @@ export default function CategoryView({ catId }: { catId: number }) {
                 <th className="px-3 py-2.5 font-semibold w-[140px] sticky top-0">สถานะ</th>
                 <th className="px-3 py-2.5 font-semibold w-[100px] sticky top-0">ครบกำหนด</th>
                 <th className="px-3 py-2.5 font-semibold w-[120px] sticky top-0 hidden lg:table-cell">ช่วงเวลา</th>
-                <th className="px-3 py-2.5 font-semibold w-[80px] sticky top-0 text-center">เอกสาร รพ.</th>
-                <th className="px-3 py-2.5 font-semibold w-[70px] sticky top-0 text-center">ตัวอย่าง</th>
-                {isAdmin && <th className="px-2 py-2.5 font-semibold w-[40px] sticky top-0 text-center">ลบ</th>}
+                <th className="px-3 py-2.5 font-semibold w-[100px] sticky top-0 text-center">เอกสาร รพ.</th>
+                <th className="px-3 py-2.5 font-semibold w-[80px] sticky top-0 text-center">ตัวอย่าง</th>
+                {canEditAdvanced && <th className="px-2 py-2.5 font-semibold w-[40px] sticky top-0 text-center">ลบ</th>}
               </tr>
             </thead>
             <tbody>
@@ -307,7 +325,7 @@ export default function CategoryView({ catId }: { catId: number }) {
 
                     {/* รายการ */}
                     <td className="px-3 py-2.5">
-                      {isAdmin ? (
+                      {canEditAdvanced ? (
                         <EditableText value={it.title} onSave={(v) => updateItemField(it.id, 'title', v)} />
                       ) : (
                         <span className="text-slate-800 font-medium">
@@ -315,12 +333,12 @@ export default function CategoryView({ catId }: { catId: number }) {
                           {overdue && <span className="text-red-500 ml-1">⚠️</span>}
                         </span>
                       )}
-                      {isAdmin && overdue && <span className="text-red-500 ml-1">⚠️</span>}
+                      {canEditAdvanced && overdue && <span className="text-red-500 ml-1">⚠️</span>}
                     </td>
 
                     {/* ผู้รับผิดชอบ */}
                     <td className="px-3 py-2.5">
-                      {reportMode ? (
+                      {reportMode || !canEditBasic ? (
                         <span className="text-slate-700">{it.owner}</span>
                       ) : (
                         <select value={it.owner} onChange={(e) => updateItemField(it.id, 'owner', e.target.value)}
@@ -332,7 +350,7 @@ export default function CategoryView({ catId }: { catId: number }) {
 
                     {/* สถานะ */}
                     <td className="px-3 py-2.5">
-                      {reportMode ? (
+                      {reportMode || !canEditBasic ? (
                         <span className={`text-[10px] px-2 py-1 rounded-full font-medium ${st.bg}`}>{st.label}</span>
                       ) : (
                         <select value={it.status} onChange={(e) => updateItemField(it.id, 'status', e.target.value as StatusValue)}
@@ -344,7 +362,7 @@ export default function CategoryView({ catId }: { catId: number }) {
 
                     {/* ครบกำหนด */}
                     <td className="px-3 py-2.5 text-slate-600">
-                      {isAdmin ? (
+                      {canEditAdvanced ? (
                         <EditableDay value={it.end} onSave={(v) => updateItemNumField(it.id, 'end', v)} />
                       ) : (
                         dayToDateShort(it.end)
@@ -353,7 +371,7 @@ export default function CategoryView({ catId }: { catId: number }) {
 
                     {/* ช่วงเวลา */}
                     <td className="px-3 py-2.5 text-slate-500 hidden lg:table-cell">
-                      {isAdmin ? (
+                      {canEditAdvanced ? (
                         <EditableRange
                           start={it.start} end={it.end}
                           onSaveStart={(v) => updateItemNumField(it.id, 'start', v)}
@@ -384,7 +402,7 @@ export default function CategoryView({ catId }: { catId: number }) {
                     </td>
 
                     {/* ลบ (admin only) */}
-                    {isAdmin && (
+                    {canEditAdvanced && (
                       <td className="px-2 py-2.5 text-center">
                         <button
                           onClick={() => { if (confirm(`ลบรายการ ${it.id} "${it.title}"?`)) removeItem(it.id); }}
@@ -403,7 +421,7 @@ export default function CategoryView({ catId }: { catId: number }) {
         </div>
 
         {/* Add item button (admin only) */}
-        {isAdmin && (
+        {canEditAdvanced && (
           <button
             onClick={handleAddItem}
             className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium text-blue-600 hover:bg-blue-50 border-t border-slate-100 transition-colors"
@@ -416,7 +434,8 @@ export default function CategoryView({ catId }: { catId: number }) {
       {/* Mobile Cards */}
       <div className="md:hidden space-y-2">
         {catItems.map((it) => (
-          <MobileItemCard key={it.id} it={it} cat={cat} catDriveUrl={catDriveUrl} />
+          <MobileItemCard key={it.id} it={it} cat={cat} catDriveUrl={catDriveUrl}
+            canEditBasic={canEditBasic} canEditAdvanced={canEditAdvanced} />
         ))}
       </div>
     </div>

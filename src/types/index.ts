@@ -30,4 +30,21 @@ export interface Item {
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
 
-export type ViewId = 'dashboard' | 'gantt' | 'refs' | number;
+export type ViewId = 'dashboard' | 'gantt' | 'refs' | 'admin' | number;
+
+export type UserRole = 'user' | 'admin' | 'superadmin';
+
+export interface User {
+  email: string;
+  name: string;
+  picture: string;
+  role: UserRole;
+}
+
+export interface AdminRecord {
+  email: string;
+  name: string;
+  role: UserRole;
+  addedBy: string;
+  addedAt: string;
+}
