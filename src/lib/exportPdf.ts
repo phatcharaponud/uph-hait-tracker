@@ -4,6 +4,8 @@ import { HAIT_CATEGORIES } from '../data/categories';
 import { STATUSES } from '../data/statuses';
 import { HOSPITAL_NAME } from '../data/config';
 import type { Item, User } from '../types';
+import { SARABUN_REGULAR } from './fonts/sarabun-regular';
+import { SARABUN_BOLD } from './fonts/sarabun-bold';
 
 const TODAY = 12;
 
@@ -19,18 +21,40 @@ function todayBE() {
   return '12 เมษายน 2569';
 }
 
+/** Create a jsPDF instance with Sarabun Thai font registered */
+function createDoc(orientation: 'p' | 'l' = 'p'): jsPDF {
+  const doc = new jsPDF(orientation, 'mm', 'a4');
+
+  // Register Sarabun fonts
+  doc.addFileToVFS('Sarabun-Regular.ttf', SARABUN_REGULAR);
+  doc.addFont('Sarabun-Regular.ttf', 'Sarabun', 'normal');
+
+  doc.addFileToVFS('Sarabun-Bold.ttf', SARABUN_BOLD);
+  doc.addFont('Sarabun-Bold.ttf', 'Sarabun', 'bold');
+
+  // Set Sarabun as default
+  doc.setFont('Sarabun', 'normal');
+
+  return doc;
+}
+
+/** Common autoTable styles with Sarabun font */
+const tableFont = { font: 'Sarabun' as const };
+
 function addHeader(doc: jsPDF, user: User | null) {
   const pageW = doc.internal.pageSize.getWidth();
+  doc.setFont('Sarabun', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(30, 58, 95);
   doc.text(HOSPITAL_NAME, pageW / 2, 18, { align: 'center' });
   doc.setFontSize(12);
-  doc.text('HAIT Progress Report', pageW / 2, 26, { align: 'center' });
+  doc.text('รายงานความคืบหน้า HAIT', pageW / 2, 26, { align: 'center' });
+  doc.setFont('Sarabun', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(100);
-  doc.text(`Report date: ${todayBE()}`, pageW / 2, 32, { align: 'center' });
+  doc.text(`วันที่ออกรายงาน: ${todayBE()}`, pageW / 2, 32, { align: 'center' });
   if (user) {
-    doc.text(`By: ${user.name} (${user.email})`, pageW / 2, 37, { align: 'center' });
+    doc.text(`ผู้ออกรายงาน: ${user.name} (${user.email})`, pageW / 2, 37, { align: 'center' });
   }
   doc.setDrawColor(30, 58, 95);
   doc.setLineWidth(0.5);
@@ -43,21 +67,16 @@ function addFooter(doc: jsPDF) {
     doc.setPage(i);
     const pageH = doc.internal.pageSize.getHeight();
     const pageW = doc.internal.pageSize.getWidth();
+    doc.setFont('Sarabun', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(150);
-    doc.text(`Page ${i}/${pageCount}`, pageW / 2, pageH - 8, { align: 'center' });
+    doc.text(`หน้า ${i}/${pageCount}`, pageW / 2, pageH - 8, { align: 'center' });
     doc.text('HAIT Tracker - Hospital Accreditation for IT', 14, pageH - 8);
   }
 }
 
 function statusLabel(s: string): string {
-  const map: Record<string, string> = {
-    not_started: 'Not Started',
-    in_progress: 'In Progress',
-    completed: 'Completed',
-    needs_revision: 'Needs Revision',
-  };
-  return map[s] || s;
+  return STATUSES[s as keyof typeof STATUSES]?.label || s;
 }
 
 function statusColor(s: string): [number, number, number] {
@@ -71,7 +90,7 @@ function statusColor(s: string): [number, number, number] {
 }
 
 export function exportDashboardPdf(items: Item[], user: User | null) {
-  const doc = new jsPDF('p', 'mm', 'a4');
+  const doc = createDoc('p');
   const pageW = doc.internal.pageSize.getWidth();
 
   // Page 1: Overview
@@ -83,26 +102,29 @@ export function exportDashboardPdf(items: Item[], user: User | null) {
   const overdue = items.filter(i => i.status !== 'completed' && i.end <= TODAY).length;
 
   let y = 48;
+  doc.setFont('Sarabun', 'bold');
   doc.setFontSize(14);
   doc.setTextColor(30, 58, 95);
-  doc.text('Overall Progress', 14, y);
+  doc.text('ภาพรวมความคืบหน้า', 14, y);
   y += 8;
 
+  doc.setFont('Sarabun', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(50);
-  doc.text(`Total items: ${total}  |  Completed: ${done}  |  Progress: ${pct}%`, 14, y);
+  doc.text(`รายการทั้งหมด: ${total}  |  เสร็จแล้ว: ${done}  |  ความคืบหน้า: ${pct}%`, 14, y);
   y += 6;
   if (overdue > 0) {
     doc.setTextColor(239, 68, 68);
-    doc.text(`Overdue items: ${overdue}`, 14, y);
+    doc.text(`รายการเลยกำหนด: ${overdue}`, 14, y);
     doc.setTextColor(50);
   }
   y += 10;
 
   // Category summary table
+  doc.setFont('Sarabun', 'bold');
   doc.setFontSize(12);
   doc.setTextColor(30, 58, 95);
-  doc.text('Category Summary', 14, y);
+  doc.text('สรุปรายหมวด', 14, y);
   y += 4;
 
   const catRows = HAIT_CATEGORIES.map(cat => {
@@ -116,10 +138,11 @@ export function exportDashboardPdf(items: Item[], user: User | null) {
 
   autoTable(doc, {
     startY: y,
-    head: [['Code', 'Category', 'Total', 'Done', 'Progress', 'Overdue']],
+    head: [['รหัส', 'หมวด', 'ทั้งหมด', 'เสร็จ', 'คืบหน้า', 'เลยกำหนด']],
     body: catRows,
-    headStyles: { fillColor: [30, 58, 95], fontSize: 8 },
-    bodyStyles: { fontSize: 8 },
+    styles: { ...tableFont, fontSize: 9 },
+    headStyles: { ...tableFont, fontStyle: 'bold', fillColor: [30, 58, 95], fontSize: 9 },
+    bodyStyles: { ...tableFont, fontSize: 9 },
     columnStyles: {
       0: { cellWidth: 18 },
       2: { halign: 'center', cellWidth: 16 },
@@ -135,19 +158,21 @@ export function exportDashboardPdf(items: Item[], user: User | null) {
     const overdueItems = items.filter(i => i.status !== 'completed' && i.end <= TODAY);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     y = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFont('Sarabun', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(239, 68, 68);
-    doc.text('Overdue Items', 14, y);
+    doc.text('รายการเลยกำหนด', 14, y);
     y += 4;
 
     autoTable(doc, {
       startY: y,
-      head: [['ID', 'Title', 'Owner', 'Due Date', 'Status']],
+      head: [['รหัส', 'รายการ', 'ผู้รับผิดชอบ', 'ครบกำหนด', 'สถานะ']],
       body: overdueItems.map(it => [
         it.id, it.title, it.owner, dayToDateShort(it.end), statusLabel(it.status),
       ]),
-      headStyles: { fillColor: [239, 68, 68], fontSize: 8 },
-      bodyStyles: { fontSize: 7 },
+      styles: { ...tableFont, fontSize: 8 },
+      headStyles: { ...tableFont, fontStyle: 'bold', fillColor: [239, 68, 68], fontSize: 8 },
+      bodyStyles: { ...tableFont, fontSize: 8 },
       margin: { left: 14, right: 14 },
     });
   }
@@ -159,19 +184,21 @@ export function exportDashboardPdf(items: Item[], user: User | null) {
     if (catItems.length === 0) return;
 
     doc.addPage();
+    doc.setFont('Sarabun', 'bold');
     doc.setFontSize(13);
     doc.setTextColor(30, 58, 95);
     doc.text(`${cat.code} - ${cat.name}`, 14, 18);
 
     const catDone = catItems.filter(i => i.status === 'completed').length;
     const catPct = Math.round((catDone / catItems.length) * 100);
+    doc.setFont('Sarabun', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(100);
-    doc.text(`${catItems.length} items | ${catDone} completed | ${catPct}%`, 14, 24);
+    doc.text(`${catItems.length} รายการ | เสร็จ ${catDone} | ความคืบหน้า ${catPct}%`, 14, 24);
 
     autoTable(doc, {
       startY: 28,
-      head: [['ID', 'Title', 'Owner', 'Status', 'Due Date', 'Period']],
+      head: [['รหัส', 'รายการ', 'ผู้รับผิดชอบ', 'สถานะ', 'ครบกำหนด', 'ช่วงเวลา']],
       body: catItems.map(it => [
         it.id,
         it.title,
@@ -180,8 +207,9 @@ export function exportDashboardPdf(items: Item[], user: User | null) {
         dayToDateShort(it.end),
         dayToRange(it.start, it.end),
       ]),
-      headStyles: { fillColor: [30, 58, 95], fontSize: 7 },
-      bodyStyles: { fontSize: 7 },
+      styles: { ...tableFont, fontSize: 8 },
+      headStyles: { ...tableFont, fontStyle: 'bold', fillColor: [30, 58, 95], fontSize: 8 },
+      bodyStyles: { ...tableFont, fontSize: 8 },
       columnStyles: {
         0: { cellWidth: 14 },
         3: { cellWidth: 24 },
@@ -203,29 +231,31 @@ export function exportDashboardPdf(items: Item[], user: User | null) {
 
   // Last page: signature
   doc.addPage();
+  doc.setFont('Sarabun', 'bold');
   doc.setFontSize(12);
   doc.setTextColor(30, 58, 95);
-  doc.text('Summary', pageW / 2, 30, { align: 'center' });
+  doc.text('สรุปผล', pageW / 2, 30, { align: 'center' });
 
+  doc.setFont('Sarabun', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(50);
   const summaryLines = [
-    `Total items: ${total}`,
-    `Completed: ${done} (${pct}%)`,
-    `In Progress: ${items.filter(i => i.status === 'in_progress').length}`,
-    `Not Started: ${items.filter(i => i.status === 'not_started').length}`,
-    `Needs Revision: ${items.filter(i => i.status === 'needs_revision').length}`,
-    `Overdue: ${overdue}`,
+    `รายการทั้งหมด: ${total}`,
+    `เสร็จแล้ว: ${done} (${pct}%)`,
+    `กำลังดำเนินการ: ${items.filter(i => i.status === 'in_progress').length}`,
+    `ยังไม่เริ่ม: ${items.filter(i => i.status === 'not_started').length}`,
+    `ต้องปรับปรุง: ${items.filter(i => i.status === 'needs_revision').length}`,
+    `เลยกำหนด: ${overdue}`,
   ];
   summaryLines.forEach((line, i) => doc.text(line, 14, 44 + i * 7));
 
   doc.setFontSize(9);
   doc.setTextColor(100);
-  doc.text('Approved by:', 14, 110);
+  doc.text('ผู้อนุมัติ:', 14, 110);
   doc.line(14, 130, 80, 130);
-  doc.text('Signature', 40, 136, { align: 'center' });
+  doc.text('ลงนาม', 47, 136, { align: 'center' });
   doc.line(110, 130, 196, 130);
-  doc.text('Date', 153, 136, { align: 'center' });
+  doc.text('วันที่', 153, 136, { align: 'center' });
 
   addFooter(doc);
   doc.save(`HAIT-Report-${new Date().toISOString().slice(0, 10)}.pdf`);
@@ -236,28 +266,30 @@ export function exportCategoryPdf(catId: number, items: Item[], user: User | nul
   if (!cat) return;
 
   const catItems = items.filter(i => i.catId === catId);
-  const doc = new jsPDF('l', 'mm', 'a4'); // landscape for more columns
+  const doc = createDoc('l'); // landscape for more columns
   const pageW = doc.internal.pageSize.getWidth();
 
+  doc.setFont('Sarabun', 'bold');
   doc.setFontSize(14);
   doc.setTextColor(30, 58, 95);
   doc.text(HOSPITAL_NAME, pageW / 2, 14, { align: 'center' });
   doc.setFontSize(11);
   doc.text(`${cat.code} - ${cat.name}`, pageW / 2, 21, { align: 'center' });
+  doc.setFont('Sarabun', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(100);
-  doc.text(`Report date: ${todayBE()}${user ? ` | By: ${user.name}` : ''}`, pageW / 2, 27, { align: 'center' });
+  doc.text(`วันที่ออกรายงาน: ${todayBE()}${user ? ` | ผู้ออกรายงาน: ${user.name}` : ''}`, pageW / 2, 27, { align: 'center' });
   doc.line(14, 30, pageW - 14, 30);
 
   const catDone = catItems.filter(i => i.status === 'completed').length;
   const catPct = catItems.length ? Math.round((catDone / catItems.length) * 100) : 0;
   doc.setFontSize(9);
   doc.setTextColor(50);
-  doc.text(`Items: ${catItems.length} | Completed: ${catDone} | Progress: ${catPct}%`, 14, 36);
+  doc.text(`รายการ: ${catItems.length} | เสร็จ: ${catDone} | ความคืบหน้า: ${catPct}%`, 14, 36);
 
   autoTable(doc, {
     startY: 40,
-    head: [['ID', 'Title', 'Owner', 'Status', 'Due Date', 'Period', 'Notes']],
+    head: [['รหัส', 'รายการ', 'ผู้รับผิดชอบ', 'สถานะ', 'ครบกำหนด', 'ช่วงเวลา', 'หมายเหตุ']],
     body: catItems.map(it => [
       it.id,
       it.title,
@@ -267,8 +299,9 @@ export function exportCategoryPdf(catId: number, items: Item[], user: User | nul
       dayToRange(it.start, it.end),
       it.notes || '-',
     ]),
-    headStyles: { fillColor: [30, 58, 95], fontSize: 8 },
-    bodyStyles: { fontSize: 7 },
+    styles: { ...tableFont, fontSize: 8 },
+    headStyles: { ...tableFont, fontStyle: 'bold', fillColor: [30, 58, 95], fontSize: 8 },
+    bodyStyles: { ...tableFont, fontSize: 8 },
     columnStyles: {
       0: { cellWidth: 16 },
       3: { cellWidth: 26 },
@@ -283,7 +316,6 @@ export function exportCategoryPdf(catId: number, items: Item[], user: User | nul
           data.cell.styles.fontStyle = 'bold';
         }
       }
-      // Highlight overdue rows
       if (data.section === 'body') {
         const item = catItems[data.row.index];
         if (item && item.status !== 'completed' && item.end <= TODAY) {
@@ -313,16 +345,18 @@ export async function exportGanttPdf() {
   const imgW = canvas.width;
   const imgH = canvas.height;
 
-  const doc = new jsPDF(imgW > imgH ? 'l' : 'p', 'mm', 'a4');
+  const doc = createDoc(imgW > imgH ? 'l' : 'p');
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
 
+  doc.setFont('Sarabun', 'bold');
   doc.setFontSize(14);
   doc.setTextColor(30, 58, 95);
   doc.text(`${HOSPITAL_NAME} - HAIT Gantt Chart`, pageW / 2, 14, { align: 'center' });
+  doc.setFont('Sarabun', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(100);
-  doc.text(`Report date: ${todayBE()}`, pageW / 2, 20, { align: 'center' });
+  doc.text(`วันที่ออกรายงาน: ${todayBE()}`, pageW / 2, 20, { align: 'center' });
 
   const maxW = pageW - 20;
   const maxH = pageH - 30;
