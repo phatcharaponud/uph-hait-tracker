@@ -1,9 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { HAIT_CATEGORIES, OWNERS } from '../data/categories';
 import { STATUSES } from '../data/statuses';
 import { useStore } from '../store/useStore';
-import type { StatusValue } from '../types';
-import { ExternalLink, FolderOpen } from 'lucide-react';
+import type { StatusValue, Item } from '../types';
+import { FolderOpen, Pencil, Trash2, Plus } from 'lucide-react';
 import { getCategoryDriveUrl } from '../data/config';
 
 const TODAY = 12;
@@ -16,15 +16,122 @@ function dayToDateShort(d: number) {
   return d <= 30 ? `${d} เม.ย. 69` : `${d - 30} พ.ค. 69`;
 }
 
-// Mobile card view for a single item
-function MobileItemCard({
-  it,
-  cat,
-  catDriveUrl,
-}: {
-  it: ReturnType<typeof useStore.getState>['items'][0];
-  cat: (typeof HAIT_CATEGORIES)[0];
-  catDriveUrl: string;
+// Inline editable text cell (admin only)
+function EditableText({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  if (!editing) {
+    return (
+      <span
+        className="cursor-pointer hover:bg-amber-50 px-1 -mx-1 rounded group inline-flex items-center gap-1"
+        onClick={() => { setDraft(value); setEditing(true); }}
+      >
+        {value}
+        <Pencil size={10} className="text-slate-300 opacity-0 group-hover:opacity-100" />
+      </span>
+    );
+  }
+  return (
+    <input
+      autoFocus
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => { if (draft !== value) onSave(draft); setEditing(false); }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') { if (draft !== value) onSave(draft); setEditing(false); }
+        if (e.key === 'Escape') setEditing(false);
+      }}
+      className="w-full text-xs px-1.5 py-0.5 border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+    />
+  );
+}
+
+// Inline editable number cell (admin only) — for day numbers
+function EditableDay({ value, onSave }: { value: number; onSave: (v: number) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(value));
+
+  if (!editing) {
+    return (
+      <span
+        className="cursor-pointer hover:bg-amber-50 px-1 -mx-1 rounded group inline-flex items-center gap-1"
+        onClick={() => { setDraft(String(value)); setEditing(true); }}
+      >
+        {dayToDateShort(value)}
+        <Pencil size={10} className="text-slate-300 opacity-0 group-hover:opacity-100" />
+      </span>
+    );
+  }
+  return (
+    <input
+      autoFocus
+      type="number"
+      min={1}
+      max={61}
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        const n = parseInt(draft);
+        if (!isNaN(n) && n >= 1 && n <= 61 && n !== value) onSave(n);
+        setEditing(false);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          const n = parseInt(draft);
+          if (!isNaN(n) && n >= 1 && n <= 61 && n !== value) onSave(n);
+          setEditing(false);
+        }
+        if (e.key === 'Escape') setEditing(false);
+      }}
+      className="w-16 text-xs px-1.5 py-0.5 border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+      title="วันที่ 1-30=เม.ย., 31-61=พ.ค."
+    />
+  );
+}
+
+function EditableRange({ start, end, onSaveStart, onSaveEnd }: {
+  start: number; end: number;
+  onSaveStart: (v: number) => void; onSaveEnd: (v: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draftS, setDraftS] = useState(String(start));
+  const [draftE, setDraftE] = useState(String(end));
+
+  if (!editing) {
+    return (
+      <span
+        className="cursor-pointer hover:bg-amber-50 px-1 -mx-1 rounded group inline-flex items-center gap-1"
+        onClick={() => { setDraftS(String(start)); setDraftE(String(end)); setEditing(true); }}
+      >
+        {dayToDate(start)} - {dayToDate(end)}
+        <Pencil size={10} className="text-slate-300 opacity-0 group-hover:opacity-100" />
+      </span>
+    );
+  }
+
+  const save = () => {
+    const s = parseInt(draftS), e = parseInt(draftE);
+    if (!isNaN(s) && s >= 1 && s <= 61 && s !== start) onSaveStart(s);
+    if (!isNaN(e) && e >= 1 && e <= 61 && e !== end) onSaveEnd(e);
+    setEditing(false);
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <input type="number" min={1} max={61} value={draftS} onChange={(e) => setDraftS(e.target.value)}
+        className="w-12 text-xs px-1 py-0.5 border border-blue-300 rounded" autoFocus />
+      <span>-</span>
+      <input type="number" min={1} max={61} value={draftE} onChange={(e) => setDraftE(e.target.value)}
+        className="w-12 text-xs px-1 py-0.5 border border-blue-300 rounded"
+        onBlur={save} onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false); }} />
+    </div>
+  );
+}
+
+// Mobile card
+function MobileItemCard({ it, cat, catDriveUrl }: {
+  it: Item; cat: (typeof HAIT_CATEGORIES)[0]; catDriveUrl: string;
 }) {
   const updateItemField = useStore((s) => s.updateItemField);
   const reportMode = useStore((s) => s.reportMode);
@@ -54,11 +161,8 @@ function MobileItemCard({
           {reportMode ? (
             <div className="text-slate-700 font-medium">{it.owner}</div>
           ) : (
-            <select
-              value={it.owner}
-              onChange={(e) => updateItemField(it.id, 'owner', e.target.value)}
-              className="w-full mt-0.5 text-xs rounded px-1 py-0.5 border border-slate-200 cursor-pointer"
-            >
+            <select value={it.owner} onChange={(e) => updateItemField(it.id, 'owner', e.target.value)}
+              className="w-full mt-0.5 text-xs rounded px-1 py-0.5 border border-slate-200 cursor-pointer">
               {OWNERS.map((o) => <option key={o} value={o}>{o}</option>)}
             </select>
           )}
@@ -68,11 +172,8 @@ function MobileItemCard({
           {reportMode ? (
             <div className={`mt-0.5 text-[10px] px-2 py-0.5 rounded-full font-medium inline-block ${st.bg}`}>{st.label}</div>
           ) : (
-            <select
-              value={it.status}
-              onChange={(e) => updateItemField(it.id, 'status', e.target.value as StatusValue)}
-              className={`w-full mt-0.5 text-xs rounded px-1 py-0.5 border border-slate-200 cursor-pointer font-medium ${st.bg}`}
-            >
+            <select value={it.status} onChange={(e) => updateItemField(it.id, 'status', e.target.value as StatusValue)}
+              className={`w-full mt-0.5 text-xs rounded px-1 py-0.5 border border-slate-200 cursor-pointer font-medium ${st.bg}`}>
               {Object.values(STATUSES).map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           )}
@@ -91,7 +192,11 @@ function MobileItemCard({
 export default function CategoryView({ catId }: { catId: number }) {
   const items = useStore((s) => s.items);
   const updateItemField = useStore((s) => s.updateItemField);
+  const updateItemNumField = useStore((s) => s.updateItemNumField);
+  const addItem = useStore((s) => s.addItem);
+  const removeItem = useStore((s) => s.removeItem);
   const reportMode = useStore((s) => s.reportMode);
+  const isAdmin = useStore((s) => s.isAdmin);
   const highlightItemId = useStore((s) => s.highlightItemId);
   const setHighlightItem = useStore((s) => s.setHighlightItem);
 
@@ -99,7 +204,6 @@ export default function CategoryView({ catId }: { catId: number }) {
   const catItems = items.filter((i) => i.catId === catId);
   const done = catItems.filter((i) => i.status === 'completed').length;
   const pct = catItems.length ? Math.round((done / catItems.length) * 100) : 0;
-
   const catDriveUrl = getCategoryDriveUrl(catId);
 
   // Clear highlight after 3 seconds
@@ -112,6 +216,20 @@ export default function CategoryView({ catId }: { catId: number }) {
     }
     return () => clearTimeout(highlightTimerRef.current);
   }, [highlightItemId, setHighlightItem]);
+
+  const handleAddItem = () => {
+    const maxId = catItems.reduce((max, it) => {
+      const parts = it.id.split('.');
+      const lastNum = parseInt(parts[parts.length - 1]) || 0;
+      return lastNum > max ? lastNum : max;
+    }, 0);
+    const newId = `${catId}.${maxId + 1}`;
+    const newItem: Item = {
+      id: newId, catId, title: 'รายการใหม่', status: 'not_started',
+      owner: 'CIO', start: TODAY, end: 61, ref: '', documentUrl: '', notes: '',
+    };
+    addItem(newItem);
+  };
 
   return (
     <div>
@@ -126,14 +244,10 @@ export default function CategoryView({ catId }: { catId: number }) {
         </div>
         <div className="flex items-center gap-4">
           <p className="text-slate-500 text-sm">{catItems.length} รายการ · {done} เสร็จแล้ว</p>
-          <a
-            href={catDriveUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <a href={catDriveUrl} target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg text-white hover:opacity-90"
             style={{ background: '#1e3a5f' }}
-            title={`เปิดโฟลเดอร์ ${cat.code} ใน Google Drive`}
-          >
+            title={`เปิดโฟลเดอร์ ${cat.code} ใน Google Drive`}>
             <FolderOpen size={12} /> เปิดโฟลเดอร์หมวด
           </a>
         </div>
@@ -162,8 +276,9 @@ export default function CategoryView({ catId }: { catId: number }) {
                 <th className="px-3 py-2.5 font-semibold w-[140px] sticky top-0">สถานะ</th>
                 <th className="px-3 py-2.5 font-semibold w-[100px] sticky top-0">ครบกำหนด</th>
                 <th className="px-3 py-2.5 font-semibold w-[120px] sticky top-0 hidden lg:table-cell">ช่วงเวลา</th>
-                <th className="px-3 py-2.5 font-semibold w-[100px] sticky top-0 text-center">เอกสาร รพ.</th>
-                <th className="px-3 py-2.5 font-semibold w-[80px] sticky top-0 text-center">ตัวอย่าง</th>
+                <th className="px-3 py-2.5 font-semibold w-[80px] sticky top-0 text-center">เอกสาร รพ.</th>
+                <th className="px-3 py-2.5 font-semibold w-[70px] sticky top-0 text-center">ตัวอย่าง</th>
+                {isAdmin && <th className="px-2 py-2.5 font-semibold w-[40px] sticky top-0 text-center">ลบ</th>}
               </tr>
             </thead>
             <tbody>
@@ -192,10 +307,15 @@ export default function CategoryView({ catId }: { catId: number }) {
 
                     {/* รายการ */}
                     <td className="px-3 py-2.5">
-                      <span className="text-slate-800 font-medium">
-                        {it.title}
-                        {overdue && <span className="text-red-500 ml-1">⚠️</span>}
-                      </span>
+                      {isAdmin ? (
+                        <EditableText value={it.title} onSave={(v) => updateItemField(it.id, 'title', v)} />
+                      ) : (
+                        <span className="text-slate-800 font-medium">
+                          {it.title}
+                          {overdue && <span className="text-red-500 ml-1">⚠️</span>}
+                        </span>
+                      )}
+                      {isAdmin && overdue && <span className="text-red-500 ml-1">⚠️</span>}
                     </td>
 
                     {/* ผู้รับผิดชอบ */}
@@ -203,11 +323,8 @@ export default function CategoryView({ catId }: { catId: number }) {
                       {reportMode ? (
                         <span className="text-slate-700">{it.owner}</span>
                       ) : (
-                        <select
-                          value={it.owner}
-                          onChange={(e) => updateItemField(it.id, 'owner', e.target.value)}
-                          className="w-full text-xs rounded px-1.5 py-1 border border-slate-200 cursor-pointer bg-transparent hover:border-slate-400 transition-colors"
-                        >
+                        <select value={it.owner} onChange={(e) => updateItemField(it.id, 'owner', e.target.value)}
+                          className="w-full text-xs rounded px-1.5 py-1 border border-slate-200 cursor-pointer bg-transparent hover:border-slate-400 transition-colors">
                           {OWNERS.map((o) => <option key={o} value={o}>{o}</option>)}
                         </select>
                       )}
@@ -218,11 +335,8 @@ export default function CategoryView({ catId }: { catId: number }) {
                       {reportMode ? (
                         <span className={`text-[10px] px-2 py-1 rounded-full font-medium ${st.bg}`}>{st.label}</span>
                       ) : (
-                        <select
-                          value={it.status}
-                          onChange={(e) => updateItemField(it.id, 'status', e.target.value as StatusValue)}
-                          className={`w-full text-xs rounded px-1.5 py-1 border border-slate-200 cursor-pointer font-medium transition-colors hover:border-slate-400 ${st.bg}`}
-                        >
+                        <select value={it.status} onChange={(e) => updateItemField(it.id, 'status', e.target.value as StatusValue)}
+                          className={`w-full text-xs rounded px-1.5 py-1 border border-slate-200 cursor-pointer font-medium transition-colors hover:border-slate-400 ${st.bg}`}>
                           {Object.values(STATUSES).map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                         </select>
                       )}
@@ -230,23 +344,31 @@ export default function CategoryView({ catId }: { catId: number }) {
 
                     {/* ครบกำหนด */}
                     <td className="px-3 py-2.5 text-slate-600">
-                      {dayToDateShort(it.end)}
+                      {isAdmin ? (
+                        <EditableDay value={it.end} onSave={(v) => updateItemNumField(it.id, 'end', v)} />
+                      ) : (
+                        dayToDateShort(it.end)
+                      )}
                     </td>
 
                     {/* ช่วงเวลา */}
                     <td className="px-3 py-2.5 text-slate-500 hidden lg:table-cell">
-                      {dayToDate(it.start)} - {dayToDate(it.end)}
+                      {isAdmin ? (
+                        <EditableRange
+                          start={it.start} end={it.end}
+                          onSaveStart={(v) => updateItemNumField(it.id, 'start', v)}
+                          onSaveEnd={(v) => updateItemNumField(it.id, 'end', v)}
+                        />
+                      ) : (
+                        <>{dayToDate(it.start)} - {dayToDate(it.end)}</>
+                      )}
                     </td>
 
                     {/* เอกสาร รพ. */}
                     <td className="px-3 py-2.5 text-center">
-                      <a
-                        href={catDriveUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <a href={catDriveUrl} target="_blank" rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded bg-navy/10 text-navy hover:bg-navy/20 transition-colors font-medium"
-                        title={`เปิดโฟลเดอร์ ${cat.code} ใน Google Drive`}
-                      >
+                        title={`เปิดโฟลเดอร์ ${cat.code} ใน Google Drive`}>
                         📂 เปิด
                       </a>
                     </td>
@@ -254,24 +376,41 @@ export default function CategoryView({ catId }: { catId: number }) {
                     {/* ตัวอย่าง */}
                     <td className="px-3 py-2.5 text-center">
                       {it.ref ? (
-                        <a
-                          href={it.ref}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-0.5 text-[10px] px-2 py-1 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-                        >
+                        <a href={it.ref} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-0.5 text-[10px] px-2 py-1 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
                           📎 ดู
                         </a>
-                      ) : (
-                        <span className="text-slate-300">-</span>
-                      )}
+                      ) : <span className="text-slate-300">-</span>}
                     </td>
+
+                    {/* ลบ (admin only) */}
+                    {isAdmin && (
+                      <td className="px-2 py-2.5 text-center">
+                        <button
+                          onClick={() => { if (confirm(`ลบรายการ ${it.id} "${it.title}"?`)) removeItem(it.id); }}
+                          className="p-1 rounded hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors"
+                          title="ลบรายการนี้"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
+
+        {/* Add item button (admin only) */}
+        {isAdmin && (
+          <button
+            onClick={handleAddItem}
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium text-blue-600 hover:bg-blue-50 border-t border-slate-100 transition-colors"
+          >
+            <Plus size={14} /> เพิ่มรายการ
+          </button>
+        )}
       </div>
 
       {/* Mobile Cards */}

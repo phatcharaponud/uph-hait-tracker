@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import AdminBadge from './components/AdminBadge';
+import Toast from './components/Toast';
 import Dashboard from './pages/Dashboard';
 import GanttChart from './pages/GanttChart';
 import CategoryView from './pages/CategoryView';
@@ -30,6 +32,8 @@ function App() {
     <div className="flex min-h-screen">
       <Sidebar />
       <Header />
+      <AdminBadge />
+      <Toast />
       <main className="flex-1 p-4 md:p-8 overflow-x-hidden mt-14 md:mt-0">
         {content}
       </main>

@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { NAV_ITEMS, HAIT_CATEGORIES } from '../data/categories';
 import { useStore, usePctOf } from '../store/useStore';
 import type { ViewId } from '../types';
 import SyncIndicator from './SyncIndicator';
-import { FileText, Eye, FolderOpen } from 'lucide-react';
+import AdminDialog from './AdminDialog';
+import { FileText, Eye, FolderOpen, Shield } from 'lucide-react';
 import { HAIT_DRIVE_FOLDER_URL } from '../data/config';
 
 function SidebarCatItem({ id, icon, code, name, color }: {
@@ -84,6 +86,36 @@ function ReportModeToggle() {
   );
 }
 
+function AdminModeButton() {
+  const isAdmin = useStore((s) => s.isAdmin);
+  const setAdmin = useStore((s) => s.setAdmin);
+  const [showDialog, setShowDialog] = useState(false);
+
+  return (
+    <div className="px-3 py-2 border-t border-slate-200">
+      <button
+        onClick={() => {
+          if (isAdmin) {
+            setAdmin(false);
+          } else {
+            setShowDialog(true);
+          }
+        }}
+        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+          isAdmin
+            ? 'bg-red-600 text-white hover:bg-red-700'
+            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+        }`}
+        title={isAdmin ? 'กำลังอยู่ในโหมด Admin — คลิกเพื่อออก' : 'เข้าสู่โหมด Admin'}
+      >
+        <Shield size={14} />
+        {isAdmin ? '🛡️ Admin Mode (ออก)' : '🔐 Admin Mode'}
+      </button>
+      {showDialog && <AdminDialog onClose={() => setShowDialog(false)} />}
+    </div>
+  );
+}
+
 export default function Sidebar() {
   return (
     <aside className="w-64 bg-white border-r border-slate-200 shrink-0 hidden md:flex flex-col sticky top-0 h-screen">
@@ -112,6 +144,9 @@ export default function Sidebar() {
 
       {/* Report Mode Toggle */}
       <ReportModeToggle />
+
+      {/* Admin Mode */}
+      <AdminModeButton />
 
       {/* Drive folder */}
       <div className="px-3 py-2 border-t border-slate-200">
