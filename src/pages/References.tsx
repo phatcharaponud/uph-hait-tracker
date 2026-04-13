@@ -1,4 +1,6 @@
 import { REFS } from '../data/categories';
+import { HAIT_DRIVE_FOLDER_URL, HOSPITAL_NAME } from '../data/config';
+import { FolderOpen } from 'lucide-react';
 
 interface RefLink {
   name: string;
@@ -87,6 +89,39 @@ export default function References() {
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-navy">📚 เอกสารอ้างอิง</h2>
         <p className="text-slate-500 text-sm">แหล่งข้อมูลมาตรฐานและตัวอย่างจาก รพ. อื่น</p>
+      </div>
+
+      {/* Hospital drive folder */}
+      <div className="mb-6">
+        <a
+          href={HAIT_DRIVE_FOLDER_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block rounded-2xl p-5 text-white hover:opacity-95 transition-opacity"
+          style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)' }}
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+              <FolderOpen size={22} />
+            </div>
+            <div>
+              <div className="font-bold text-lg">📁 คลังเอกสาร HAIT ของโรงพยาบาล</div>
+              <div className="text-xs opacity-80">เอกสาร HAIT ทั้งหมดของ {HOSPITAL_NAME}</div>
+            </div>
+          </div>
+          <div className="bg-white/15 rounded-xl p-3 text-xs space-y-1">
+            <div className="font-semibold mb-1">แนะนำ: สร้างโฟลเดอร์ย่อยตาม 7 หมวด</div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 opacity-90">
+              <span>📋 HAIT 1 – แผนแม่บท IT</span>
+              <span>⚠️ HAIT 2 – ความเสี่ยง</span>
+              <span>🔒 HAIT 3 – ความมั่นคงปลอดภัย</span>
+              <span>🛠 HAIT 4 – Service & Incident</span>
+              <span>📑 HAIT 5 – คุณภาพข้อมูล</span>
+              <span>🧩 HAIT 6 – ออกแบบระบบ</span>
+              <span>⚙️ HAIT 7 – Capacity</span>
+            </div>
+          </div>
+        </a>
       </div>
 
       {/* Group 1: Official */}

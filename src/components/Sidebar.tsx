@@ -2,7 +2,8 @@ import { NAV_ITEMS, HAIT_CATEGORIES } from '../data/categories';
 import { useStore, usePctOf } from '../store/useStore';
 import type { ViewId } from '../types';
 import SyncIndicator from './SyncIndicator';
-import { FileText, Eye } from 'lucide-react';
+import { FileText, Eye, FolderOpen } from 'lucide-react';
+import { HAIT_DRIVE_FOLDER_URL } from '../data/config';
 
 function SidebarCatItem({ id, icon, code, name, color }: {
   id: ViewId; icon: string; code: string; name: string; color: string;
@@ -111,6 +112,20 @@ export default function Sidebar() {
 
       {/* Report Mode Toggle */}
       <ReportModeToggle />
+
+      {/* Drive folder */}
+      <div className="px-3 py-2 border-t border-slate-200">
+        <a
+          href={HAIT_DRIVE_FOLDER_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-white hover:opacity-90 transition-opacity"
+          style={{ background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' }}
+        >
+          <FolderOpen size={14} />
+          📁 โฟลเดอร์กลาง HAIT
+        </a>
+      </div>
 
       <TodayCounter />
     </aside>

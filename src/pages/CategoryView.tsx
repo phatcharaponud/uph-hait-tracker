@@ -3,7 +3,8 @@ import { HAIT_CATEGORIES, OWNERS } from '../data/categories';
 import { STATUSES } from '../data/statuses';
 import { useStore } from '../store/useStore';
 import type { StatusValue } from '../types';
-import { ExternalLink, Save, Pencil, FolderOpen } from 'lucide-react';
+import { ExternalLink, Save, Pencil, FolderOpen, Upload } from 'lucide-react';
+import { HAIT_DRIVE_FOLDER_URL } from '../data/config';
 
 const TODAY = 12;
 
@@ -82,12 +83,13 @@ function DocumentUrlSection({ itemId, documentUrl }: { itemId: string; documentU
             <Pencil size={12} /> แก้ไขลิงก์
           </button>
           <a
-            href="https://drive.google.com"
+            href={HAIT_DRIVE_FOLDER_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
+            title="เปิดโฟลเดอร์กลาง HAIT – อัพโหลดไฟล์ที่นี่ แล้ว copy ลิงก์กลับมาวาง"
           >
-            <ExternalLink size={12} /> อัพโหลดใหม่
+            <Upload size={12} /> อัพโหลดใหม่
           </a>
         </div>
       )}

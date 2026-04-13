@@ -7,7 +7,8 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
 } from 'recharts';
-import { X } from 'lucide-react';
+import { X, FolderOpen } from 'lucide-react';
+import { HAIT_DRIVE_FOLDER_URL } from '../data/config';
 
 const TODAY = 12;
 
@@ -104,11 +105,23 @@ export default function Dashboard() {
   return (
     <div className="md:h-[calc(100vh-64px)] md:overflow-hidden">
       {/* Header */}
-      <div className="mb-3">
-        <h2 className="text-2xl font-bold text-navy">ภาพรวม HAIT</h2>
-        <p className="text-slate-500 text-sm">
-          เป้าหมาย: ทุกหมวดเสร็จภายใน <span className="font-bold text-red-600">31 พฤษภาคม 2569</span>
-        </p>
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <h2 className="text-2xl font-bold text-navy">ภาพรวม HAIT</h2>
+          <p className="text-slate-500 text-sm">
+            เป้าหมาย: ทุกหมวดเสร็จภายใน <span className="font-bold text-red-600">31 พฤษภาคม 2569</span>
+          </p>
+        </div>
+        <a
+          href={HAIT_DRIVE_FOLDER_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-navy hover:shadow-md transition-shadow"
+          style={{ background: '#1e3a5f15' }}
+        >
+          <FolderOpen size={14} className="text-navy" />
+          📁 คลังเอกสาร
+        </a>
       </div>
 
       {/* 2-column layout */}
