@@ -2,7 +2,8 @@ import { useState, useRef } from 'react';
 import { HAIT_CATEGORIES } from '../data/categories';
 import { STATUSES } from '../data/statuses';
 import { useStore } from '../store/useStore';
-import { ZoomIn, ZoomOut } from 'lucide-react';
+import { ZoomIn, ZoomOut, FileDown } from 'lucide-react';
+import { exportGanttPdf } from '../lib/exportPdf';
 
 const TODAY = 12;
 const TOTAL_DAYS = 61;
@@ -47,19 +48,29 @@ export default function GanttChart() {
             1 เม.ย. – 31 พ.ค. 2569 · เส้นแดง = วันนี้
           </p>
         </div>
-        <div className="flex items-center gap-1">
-          <button onClick={zoomOut} disabled={zoomIdx === 0} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30">
-            <ZoomOut size={16} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => exportGanttPdf()}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-white hover:opacity-90"
+            style={{ background: '#1e3a5f' }}
+            title="ดาวน์โหลด Gantt Chart เป็น PDF"
+          >
+            <FileDown size={13} /> 📄 PDF
           </button>
-          <span className="text-[10px] text-slate-500 w-8 text-center">{colW}px</span>
-          <button onClick={zoomIn} disabled={zoomIdx === ZOOM_LEVELS.length - 1} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30">
-            <ZoomIn size={16} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button onClick={zoomOut} disabled={zoomIdx === 0} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30" title="ซูมออก">
+              <ZoomOut size={16} />
+            </button>
+            <span className="text-[10px] text-slate-500 w-8 text-center">{colW}px</span>
+            <button onClick={zoomIn} disabled={zoomIdx === ZOOM_LEVELS.length - 1} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30" title="ซูมเข้า">
+              <ZoomIn size={16} />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Gantt body */}
-      <div className="bg-white rounded-xl shadow-sm overflow-auto flex-1 relative" ref={containerRef}>
+      <div className="gantt-capture bg-white rounded-xl shadow-sm overflow-auto flex-1 relative" ref={containerRef}>
         <div style={{ minWidth: labelW + colW * TOTAL_DAYS }}>
           {/* Month header */}
           <div className="flex text-white text-[10px] font-semibold sticky top-0 z-10">

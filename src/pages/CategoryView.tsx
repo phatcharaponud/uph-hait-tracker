@@ -3,8 +3,9 @@ import { HAIT_CATEGORIES, OWNERS } from '../data/categories';
 import { STATUSES } from '../data/statuses';
 import { useStore } from '../store/useStore';
 import type { StatusValue, Item } from '../types';
-import { FolderOpen, Pencil, Trash2, Plus } from 'lucide-react';
+import { FolderOpen, Pencil, Trash2, Plus, FileDown } from 'lucide-react';
 import { getCategoryDriveUrl } from '../data/config';
+import { exportCategoryPdf } from '../lib/exportPdf';
 
 const TODAY = 12;
 
@@ -255,6 +256,14 @@ export default function CategoryView({ catId }: { catId: number }) {
         </div>
         <div className="flex items-center gap-4">
           <p className="text-slate-500 text-sm">{catItems.length} รายการ · {done} เสร็จแล้ว</p>
+          <button
+            onClick={() => exportCategoryPdf(catId, items, user)}
+            className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg text-white hover:opacity-90"
+            style={{ background: '#1e3a5f' }}
+            title={`ดาวน์โหลด PDF ${cat.code}`}
+          >
+            <FileDown size={12} /> 📄 PDF
+          </button>
           <a href={catDriveUrl} target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg text-white hover:opacity-90"
             style={{ background: '#1e3a5f' }}
@@ -282,8 +291,19 @@ export default function CategoryView({ catId }: { catId: number }) {
         </div>
       )}
 
+      {/* Empty state */}
+      {catItems.length === 0 && (
+        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+          <div className="text-4xl mb-3">📭</div>
+          <h3 className="text-lg font-semibold text-slate-700 mb-1">ยังไม่มีรายการ</h3>
+          <p className="text-sm text-slate-400">
+            {canEditAdvanced ? 'คลิกปุ่ม "เพิ่มรายการ" ด้านล่างเพื่อเริ่มต้น' : 'ยังไม่มีรายการในหมวดนี้'}
+          </p>
+        </div>
+      )}
+
       {/* Desktop Table */}
-      <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden">
+      {catItems.length > 0 && <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
@@ -429,15 +449,27 @@ export default function CategoryView({ catId }: { catId: number }) {
             <Plus size={14} /> เพิ่มรายการ
           </button>
         )}
-      </div>
+      </div>}
 
       {/* Mobile Cards */}
-      <div className="md:hidden space-y-2">
-        {catItems.map((it) => (
-          <MobileItemCard key={it.id} it={it} cat={cat} catDriveUrl={catDriveUrl}
-            canEditBasic={canEditBasic} canEditAdvanced={canEditAdvanced} />
-        ))}
-      </div>
+      {catItems.length > 0 && (
+        <div className="md:hidden space-y-2">
+          {catItems.map((it) => (
+            <MobileItemCard key={it.id} it={it} cat={cat} catDriveUrl={catDriveUrl}
+              canEditBasic={canEditBasic} canEditAdvanced={canEditAdvanced} />
+          ))}
+        </div>
+      )}
+
+      {/* Add item button when empty (admin) */}
+      {catItems.length === 0 && canEditAdvanced && (
+        <button
+          onClick={handleAddItem}
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium text-blue-600 bg-white rounded-xl shadow-sm hover:bg-blue-50 border border-slate-100 transition-colors mt-4"
+        >
+          <Plus size={14} /> เพิ่มรายการ
+        </button>
+      )}
     </div>
   );
 }

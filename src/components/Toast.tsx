@@ -1,14 +1,50 @@
+import { useEffect } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 import { useStore } from '../store/useStore';
-import { CheckCircle2 } from 'lucide-react';
 
 export default function Toast() {
-  const toast = useStore((s) => s.toast);
-  if (!toast) return null;
+  const storeToast = useStore((s) => s.toast);
+  const syncStatus = useStore((s) => s.syncStatus);
+  const syncError = useStore((s) => s.syncError);
+
+  // Show store toast messages
+  useEffect(() => {
+    if (storeToast) {
+      if (storeToast.includes('ไม่สำเร็จ') || storeToast.includes('ผิดพลาด')) {
+        toast.error(storeToast);
+      } else {
+        toast.success(storeToast);
+      }
+    }
+  }, [storeToast]);
+
+  // Show sync errors
+  useEffect(() => {
+    if (syncStatus === 'error' && syncError) {
+      toast.error(syncError);
+    }
+  }, [syncStatus, syncError]);
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 text-white text-sm font-medium shadow-xl animate-[fadeIn_0.2s]">
-      <CheckCircle2 size={16} className="text-emerald-400" />
-      {toast}
-    </div>
+    <Toaster
+      position="bottom-center"
+      toastOptions={{
+        duration: 2500,
+        style: {
+          borderRadius: '12px',
+          padding: '10px 16px',
+          fontSize: '14px',
+          fontWeight: 500,
+        },
+        success: {
+          style: { background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0' },
+          iconTheme: { primary: '#10b981', secondary: '#ecfdf5' },
+        },
+        error: {
+          style: { background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' },
+          iconTheme: { primary: '#ef4444', secondary: '#fef2f2' },
+        },
+      }}
+    />
   );
 }

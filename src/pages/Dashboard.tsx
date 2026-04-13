@@ -3,8 +3,10 @@ import { HAIT_CATEGORIES } from '../data/categories';
 import { STATUSES } from '../data/statuses';
 import { useStore } from '../store/useStore';
 import type { Item, StatusValue } from '../types';
-import { X, FolderOpen } from 'lucide-react';
+import { X, FolderOpen, FileDown, FileSpreadsheet } from 'lucide-react';
 import { HAIT_DRIVE_FOLDER_URL } from '../data/config';
+import { exportDashboardPdf } from '../lib/exportPdf';
+import { exportExcel } from '../lib/exportExcel';
 
 const TODAY = 12;
 
@@ -65,9 +67,50 @@ function StatusModal({
   );
 }
 
+function AlertBanner({ items }: { items: Item[] }) {
+  const setView = useStore((s) => s.setView);
+  const setHighlightItem = useStore((s) => s.setHighlightItem);
+  const overdueItems = items.filter(i => i.status !== 'completed' && i.end <= TODAY);
+  const nearDeadline = items.filter(i => i.status !== 'completed' && i.end > TODAY && i.end <= TODAY + 7);
+
+  if (overdueItems.length === 0 && nearDeadline.length === 0) return null;
+
+  const goToFirst = (list: Item[]) => {
+    if (list.length > 0) {
+      setHighlightItem(list[0].id);
+      setView(list[0].catId);
+    }
+  };
+
+  return (
+    <div className="space-y-2 mb-3">
+      {overdueItems.length > 0 && (
+        <div
+          className="bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 text-sm text-red-700 flex items-center justify-between cursor-pointer hover:bg-red-100 transition-colors"
+          onClick={() => goToFirst(overdueItems)}
+        >
+          <span>⚠️ มีรายการเลยกำหนด <strong>{overdueItems.length}</strong> รายการ</span>
+          <span className="text-xs text-red-500">คลิกเพื่อดู →</span>
+        </div>
+      )}
+      {nearDeadline.length > 0 && (
+        <div
+          className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-sm text-amber-700 flex items-center justify-between cursor-pointer hover:bg-amber-100 transition-colors"
+          onClick={() => goToFirst(nearDeadline)}
+        >
+          <span>🔔 มีรายการใกล้ครบกำหนด (≤7 วัน) <strong>{nearDeadline.length}</strong> รายการ</span>
+          <span className="text-xs text-amber-500">คลิกเพื่อดู →</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const items = useStore((s) => s.items);
+  const user = useStore((s) => s.user);
   const setView = useStore((s) => s.setView);
+  const syncStatus = useStore((s) => s.syncStatus);
   const [modalStatus, setModalStatus] = useState<StatusValue | null>(null);
 
   const total = items.length;
@@ -81,8 +124,27 @@ export default function Dashboard() {
     ...STATUSES[k],
   }));
 
+  // Loading skeleton
+  if (syncStatus === 'syncing' && items.length === 0) {
+    return (
+      <div className="animate-pulse space-y-4">
+        <div className="h-8 bg-slate-200 rounded w-48" />
+        <div className="h-32 bg-slate-200 rounded-2xl" />
+        <div className="grid grid-cols-4 gap-2">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-20 bg-slate-200 rounded-xl" />)}
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          {[1, 2, 3, 4, 5, 6, 7].map(i => <div key={i} className="h-32 bg-slate-200 rounded-xl" />)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="md:h-[calc(100vh-64px)] md:flex md:flex-col">
+      {/* Alert banners */}
+      <AlertBanner items={items} />
+
       {/* Row 1: Header + Overall Progress */}
       <div className="shrink-0 mb-3">
         <div className="flex items-start justify-between mb-3">
@@ -92,16 +154,35 @@ export default function Dashboard() {
               เป้าหมาย: ทุกหมวดเสร็จภายใน <span className="font-bold text-red-600">31 พฤษภาคม 2569</span>
             </p>
           </div>
-          <a
-            href={HAIT_DRIVE_FOLDER_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-navy hover:shadow-md transition-shadow"
-            style={{ background: '#1e3a5f15' }}
-          >
-            <FolderOpen size={14} className="text-navy" />
-            📁 คลังเอกสาร
-          </a>
+          <div className="shrink-0 flex items-center gap-2">
+            <button
+              onClick={() => exportDashboardPdf(items, user)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-white hover:opacity-90 transition-opacity"
+              style={{ background: '#1e3a5f' }}
+              title="ดาวน์โหลดรายงาน PDF"
+            >
+              <FileDown size={14} />
+              📄 PDF
+            </button>
+            <button
+              onClick={() => exportExcel(items)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition-colors"
+              title="ดาวน์โหลดรายงาน Excel"
+            >
+              <FileSpreadsheet size={14} />
+              📊 Excel
+            </button>
+            <a
+              href={HAIT_DRIVE_FOLDER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-navy hover:shadow-md transition-shadow"
+              style={{ background: '#1e3a5f15' }}
+            >
+              <FolderOpen size={14} className="text-navy" />
+              📁 คลังเอกสาร
+            </a>
+          </div>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm p-4">
@@ -143,6 +224,7 @@ export default function Dashboard() {
             className="bg-white rounded-xl shadow-sm p-3 border-l-4 cursor-pointer hover:shadow-md transition-shadow"
             style={{ borderColor: c.color }}
             onClick={() => setModalStatus(c.key)}
+            title={`คลิกเพื่อดูรายการ ${c.label}`}
           >
             <div className="text-2xl font-bold" style={{ color: c.color }}>
               {c.n}
@@ -152,7 +234,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Row 3: Category cards — fill remaining space */}
+      {/* Row 3: Category cards */}
       <div className="flex-1 min-h-0">
         <h3 className="font-bold text-navy text-sm mb-2">ความคืบหน้ารายหมวด</h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:h-[calc(100%-28px)]">
@@ -169,6 +251,7 @@ export default function Dashboard() {
                 key={catId}
                 className="bg-white rounded-xl shadow-sm p-4 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between"
                 onClick={() => setView(catId)}
+                title={`ดูรายละเอียด ${cat.code}`}
               >
                 <div>
                   <div className="flex items-start gap-2 mb-2">

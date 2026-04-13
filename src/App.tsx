@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import ErrorBoundary from './components/ErrorBoundary';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import AdminBadge from './components/AdminBadge';
@@ -10,6 +11,7 @@ import CategoryView from './pages/CategoryView';
 import References from './pages/References';
 import AdminManagement from './pages/AdminManagement';
 import { useStore } from './store/useStore';
+import { useKeyboardShortcuts } from './lib/useKeyboardShortcuts';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 
@@ -21,6 +23,8 @@ function AppContent() {
   useEffect(() => {
     loadItems();
   }, [loadItems]);
+
+  useKeyboardShortcuts();
 
   let content: React.ReactNode;
   if (currentView === 'dashboard') {
@@ -52,9 +56,11 @@ function AppContent() {
 
 function App() {
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <AppContent />
-    </GoogleOAuthProvider>
+    <ErrorBoundary>
+      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+        <AppContent />
+      </GoogleOAuthProvider>
+    </ErrorBoundary>
   );
 }
 
