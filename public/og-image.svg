@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#1e3a5f"/>
+  <text x="600" y="250" text-anchor="middle" font-size="100" fill="white" font-family="sans-serif" font-weight="bold">HAIT Tracker</text>
+  <text x="600" y="350" text-anchor="middle" font-size="36" fill="#93c5fd" font-family="sans-serif">Hospital Accreditation for IT</text>
+  <text x="600" y="430" text-anchor="middle" font-size="30" fill="#94a3b8" font-family="sans-serif">University of Phayao Hospital</text>
+  <text x="600" y="540" text-anchor="middle" font-size="80">📋</text>
+</svg>
