@@ -1,5 +1,6 @@
 import { REFS } from '../data/categories';
-import { HAIT_DRIVE_FOLDER_URL, HOSPITAL_NAME } from '../data/config';
+import { HAIT_DRIVE_FOLDER_URL, HOSPITAL_NAME, CATEGORY_DRIVE_URLS } from '../data/config';
+import { HAIT_CATEGORIES } from '../data/categories';
 import { FolderOpen } from 'lucide-react';
 
 interface RefLink {
@@ -69,7 +70,7 @@ function RefCard({ link }: { link: RefLink }) {
       href={link.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="bg-white rounded-xl shadow-sm p-4 block hover:shadow-md hover:-translate-y-0.5 transition-all"
+      className="bg-white rounded-xl shadow-sm p-4 block hover:shadow-md hover:-translate-y-0.5 transition-all border border-slate-100"
     >
       <div className="flex justify-between items-start gap-3 mb-1">
         <div className="font-bold text-slate-800 text-sm">{link.name}</div>
@@ -87,66 +88,91 @@ export default function References() {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-navy">📚 เอกสารอ้างอิง</h2>
+        <h2 className="text-2xl font-bold" style={{ color: '#1e3a5f' }}>
+          📚 เอกสารอ้างอิง
+        </h2>
         <p className="text-slate-500 text-sm">แหล่งข้อมูลมาตรฐานและตัวอย่างจาก รพ. อื่น</p>
       </div>
 
-      {/* Hospital drive folder */}
+      {/* Hospital Drive Folder - Banner */}
       <div className="mb-6">
-        <a
-          href={HAIT_DRIVE_FOLDER_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block rounded-2xl p-5 text-white hover:opacity-95 transition-opacity"
+        <div
+          className="rounded-2xl p-5 text-white"
           style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)' }}
         >
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
               <FolderOpen size={22} />
             </div>
             <div>
-              <div className="font-bold text-lg">📁 คลังเอกสาร HAIT ของโรงพยาบาล</div>
-              <div className="text-xs opacity-80">เอกสาร HAIT ทั้งหมดของ {HOSPITAL_NAME}</div>
+              <div className="font-bold text-lg">คลังเอกสาร HAIT ของ {HOSPITAL_NAME}</div>
             </div>
           </div>
-          <div className="bg-white/15 rounded-xl p-3 text-xs space-y-1">
-            <div className="font-semibold mb-1">แนะนำ: สร้างโฟลเดอร์ย่อยตาม 7 หมวด</div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 opacity-90">
-              <span>📋 HAIT 1 – แผนแม่บท IT</span>
-              <span>⚠️ HAIT 2 – ความเสี่ยง</span>
-              <span>🔒 HAIT 3 – ความมั่นคงปลอดภัย</span>
-              <span>🛠 HAIT 4 – Service & Incident</span>
-              <span>📑 HAIT 5 – คุณภาพข้อมูล</span>
-              <span>🧩 HAIT 6 – ออกแบบระบบ</span>
-              <span>⚙️ HAIT 7 – Capacity</span>
-            </div>
-          </div>
-        </a>
-      </div>
 
-      {/* Group 1: Official */}
-      <div className="mb-6">
-        <h3 className="font-bold text-navy text-sm mb-2 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-navy" style={{ background: '#1e3a5f' }} />
-          มาตรฐาน / เอกสารทางการ
-        </h3>
-        <div className="grid gap-2">
-          {OFFICIAL.map((l) => (
-            <RefCard key={l.url} link={l} />
-          ))}
+          {/* Main folder button */}
+          <a
+            href={HAIT_DRIVE_FOLDER_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 transition-colors rounded-xl px-4 py-2.5 text-sm font-medium mb-4"
+          >
+            📁 เปิดโฟลเดอร์กลาง
+          </a>
+
+          {/* 7 Quick Links */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+            {HAIT_CATEGORIES.map((cat) => {
+              const catId = cat.id as number;
+              const url = CATEGORY_DRIVE_URLS[catId] || HAIT_DRIVE_FOLDER_URL;
+              return (
+                <a
+                  key={catId}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 transition-colors rounded-lg px-2.5 py-2 text-xs font-medium"
+                >
+                  <span>{cat.icon}</span>
+                  <span className="truncate">{cat.code}</span>
+                </a>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Group 2: Examples */}
-      <div>
-        <h3 className="font-bold text-slate-600 text-sm mb-2 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-slate-400" />
-          ตัวอย่างจาก รพ. อื่น (ศึกษาเฉพาะ ไม่ใช่เอกสารจริง)
-        </h3>
-        <div className="grid gap-2">
-          {EXAMPLES.map((l) => (
-            <RefCard key={l.url} link={l} />
-          ))}
+      {/* Two-column layout */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Column 1: Official standards */}
+        <div>
+          <h3 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: '#1e3a5f' }}>
+            <span className="w-2 h-2 rounded-full" style={{ background: '#1e3a5f' }} />
+            📋 มาตรฐาน / เอกสารทางการ
+            <span className="text-[10px] font-normal text-slate-400 ml-auto">
+              {OFFICIAL.length} แหล่ง
+            </span>
+          </h3>
+          <div className="grid gap-2">
+            {OFFICIAL.map((l) => (
+              <RefCard key={l.url} link={l} />
+            ))}
+          </div>
+        </div>
+
+        {/* Column 2: Hospital examples */}
+        <div>
+          <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-slate-600">
+            <span className="w-2 h-2 rounded-full bg-slate-400" />
+            🏥 ตัวอย่างจาก รพ. อื่น
+            <span className="text-[10px] font-normal text-slate-400 ml-auto">
+              {EXAMPLES.length} แหล่ง
+            </span>
+          </h3>
+          <div className="grid gap-2">
+            {EXAMPLES.map((l) => (
+              <RefCard key={l.url} link={l} />
+            ))}
+          </div>
         </div>
       </div>
     </div>
