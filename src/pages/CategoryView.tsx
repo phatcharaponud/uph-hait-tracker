@@ -219,7 +219,7 @@ export default function CategoryView({ catId }: { catId: number }) {
   const catDriveUrl = getCategoryDriveUrl(catId);
 
   // Clear highlight after 3 seconds
-  const highlightTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
     if (highlightItemId) {
       highlightTimerRef.current = setTimeout(() => setHighlightItem(null), 3000);

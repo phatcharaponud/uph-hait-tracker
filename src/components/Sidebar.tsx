@@ -179,11 +179,11 @@ export default function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map((c) => (
-          <SidebarCatItem key={String(c.id)} id={c.id as ViewId} {...c} />
+          <SidebarCatItem key={String(c.id)} {...c} id={c.id as ViewId} />
         ))}
         <div className="border-t border-slate-200 my-2" />
         {HAIT_CATEGORIES.map((c) => (
-          <SidebarCatItem key={String(c.id)} id={c.id as ViewId} {...c} />
+          <SidebarCatItem key={String(c.id)} {...c} id={c.id as ViewId} />
         ))}
       </nav>
 

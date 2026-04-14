@@ -24,11 +24,6 @@ export default function GanttChart() {
   const rowH = 22;
   const catHeaderH = 24;
 
-  // 38 items + 7 cat headers = ~45 rows
-  const totalItems = items.length;
-  const totalCatHeaders = HAIT_CATEGORIES.length;
-  const gridHeight = totalItems * rowH + totalCatHeaders * catHeaderH;
-
   const zoomIn = () => setZoomIdx((i) => Math.min(i + 1, ZOOM_LEVELS.length - 1));
   const zoomOut = () => setZoomIdx((i) => Math.max(i - 1, 0));
 
