@@ -4,7 +4,6 @@ import type { ViewId } from '../types';
 import SyncIndicator from './SyncIndicator';
 import { FileText, Eye, FolderOpen, LogOut, Settings } from 'lucide-react';
 import { HAIT_DRIVE_FOLDER_URL } from '../data/config';
-import { GoogleLogin } from '@react-oauth/google';
 
 function SidebarCatItem({ id, icon, code, name, color }: {
   id: ViewId; icon: string; code: string; name: string; color: string;
@@ -86,30 +85,12 @@ function ReportModeToggle() {
 
 function UserPanel() {
   const user = useStore((s) => s.user);
-  const login = useStore((s) => s.login);
   const logout = useStore((s) => s.logout);
   const isSuperAdmin = useStore((s) => s.isSuperAdmin);
   const setView = useStore((s) => s.setView);
   const currentView = useStore((s) => s.currentView);
 
-  if (!user) {
-    return (
-      <div className="px-3 py-3 border-t border-slate-200">
-        <p className="text-[10px] text-slate-400 mb-2 text-center">เข้าสู่ระบบด้วย @up.ac.th</p>
-        <div className="flex justify-center">
-          <GoogleLogin
-            onSuccess={(res) => { if (res.credential) login(res.credential); }}
-            onError={() => {}}
-            size="medium"
-            theme="outline"
-            text="signin_with"
-            shape="rectangular"
-            width="220"
-          />
-        </div>
-      </div>
-    );
-  }
+  if (!user) return null;
 
   const roleBadge = user.role === 'superadmin'
     ? { label: '👑 Super Admin', cls: 'bg-gradient-to-r from-red-500 to-orange-500 text-white' }

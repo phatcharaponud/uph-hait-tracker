@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import ErrorBoundary from './components/ErrorBoundary';
 import Sidebar from './components/Sidebar';
@@ -10,6 +10,7 @@ import GanttChart from './pages/GanttChart';
 import CategoryView from './pages/CategoryView';
 import References from './pages/References';
 import AdminManagement from './pages/AdminManagement';
+import LoginPage from './pages/LoginPage';
 import { useStore } from './store/useStore';
 import { useKeyboardShortcuts } from './lib/useKeyboardShortcuts';
 
@@ -19,12 +20,41 @@ function AppContent() {
   const currentView = useStore((s) => s.currentView);
   const loadItems = useStore((s) => s.loadItems);
   const isSuperAdmin = useStore((s) => s.isSuperAdmin);
+  const user = useStore((s) => s.user);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    loadItems();
-  }, [loadItems]);
+    // Auth check from localStorage is synchronous in useStore init,
+    // so we just mark it done on mount
+    setAuthChecked(true);
+  }, []);
+
+  useEffect(() => {
+    if (user) loadItems();
+  }, [user, loadItems]);
 
   useKeyboardShortcuts();
+
+  // Loading state while checking auth
+  if (!authChecked) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)' }}
+      >
+        <div className="text-white text-center space-y-3">
+          <div className="text-4xl">📋</div>
+          <div className="text-lg font-medium">HAIT Tracker</div>
+          <div className="text-sm opacity-80">กำลังตรวจสอบ...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not logged in → show login page
+  if (!user) {
+    return <LoginPage />;
+  }
 
   let content: React.ReactNode;
   if (currentView === 'dashboard') {
