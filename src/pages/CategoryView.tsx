@@ -6,6 +6,7 @@ import type { StatusValue, Item } from '../types';
 import { FolderOpen, Pencil, Trash2, Plus, FileDown } from 'lucide-react';
 import { getCategoryDriveUrl } from '../data/config';
 import { exportCategoryPdf } from '../lib/exportPdf';
+import ItemTooltip from '../components/ItemTooltip';
 
 const TODAY = 12;
 
@@ -160,6 +161,7 @@ function MobileItemCard({ it, cat, catDriveUrl, canEditBasic, canEditAdvanced }:
           {canEditAdvanced ? (
             <EditableText value={it.title} onSave={(v) => updateItemField(it.id, 'title', v)} />
           ) : it.title}
+          {it.description && <ItemTooltip description={it.description} />}
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 text-xs mb-2">
@@ -354,6 +356,7 @@ export default function CategoryView({ catId }: { catId: number }) {
                         </span>
                       )}
                       {canEditAdvanced && overdue && <span className="text-red-500 ml-1">⚠️</span>}
+                      {it.description && <ItemTooltip description={it.description} />}
                     </td>
 
                     {/* ผู้รับผิดชอบ */}

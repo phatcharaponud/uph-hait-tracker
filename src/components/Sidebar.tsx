@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import { NAV_ITEMS, HAIT_CATEGORIES } from '../data/categories';
 import { useStore, usePctOf } from '../store/useStore';
 import type { ViewId } from '../types';
 import SyncIndicator from './SyncIndicator';
-import { FileText, Eye, FolderOpen, LogOut, Settings } from 'lucide-react';
+import { FileText, Eye, FolderOpen, LogOut, Settings, Search } from 'lucide-react';
 import { HAIT_DRIVE_FOLDER_URL } from '../data/config';
+import { findDuplicateItems } from '../lib/duplicateCheck';
 
 function SidebarCatItem({ id, icon, code, name, color }: {
   id: ViewId; icon: string; code: string; name: string; color: string;
@@ -86,9 +88,12 @@ function ReportModeToggle() {
 function UserPanel() {
   const user = useStore((s) => s.user);
   const logout = useStore((s) => s.logout);
+  const isAdmin = useStore((s) => s.isAdmin);
   const isSuperAdmin = useStore((s) => s.isSuperAdmin);
   const setView = useStore((s) => s.setView);
   const currentView = useStore((s) => s.currentView);
+  const items = useStore((s) => s.items);
+  const dupCount = useMemo(() => findDuplicateItems(items).length, [items]);
 
   if (!user) return null;
 
@@ -117,6 +122,25 @@ function UserPanel() {
           {roleBadge.label}
         </span>
       </div>
+      {isAdmin && (
+        <button
+          onClick={() => setView('duplicates')}
+          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+            currentView === 'duplicates'
+              ? 'text-white shadow-lg'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+          style={currentView === 'duplicates' ? { background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' } : undefined}
+        >
+          <Search size={14} />
+          🔍 ตรวจสอบรายการซ้ำ
+          {dupCount > 0 && (
+            <span className="ml-auto bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+              {dupCount}
+            </span>
+          )}
+        </button>
+      )}
       {isSuperAdmin && (
         <button
           onClick={() => setView('admin')}

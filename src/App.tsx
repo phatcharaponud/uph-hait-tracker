@@ -11,6 +11,7 @@ import CategoryView from './pages/CategoryView';
 import References from './pages/References';
 import AdminManagement from './pages/AdminManagement';
 import LoginPage from './pages/LoginPage';
+import DuplicateCheckPage from './pages/DuplicateCheckPage';
 import { useStore } from './store/useStore';
 import { useKeyboardShortcuts } from './lib/useKeyboardShortcuts';
 
@@ -20,6 +21,7 @@ function AppContent() {
   const currentView = useStore((s) => s.currentView);
   const loadItems = useStore((s) => s.loadItems);
   const isSuperAdmin = useStore((s) => s.isSuperAdmin);
+  const isAdmin = useStore((s) => s.isAdmin);
   const user = useStore((s) => s.user);
   const [authChecked, setAuthChecked] = useState(false);
 
@@ -63,6 +65,10 @@ function AppContent() {
     content = <GanttChart />;
   } else if (currentView === 'refs') {
     content = <References />;
+  } else if (currentView === 'duplicates' && isAdmin) {
+    content = <DuplicateCheckPage />;
+  } else if (currentView === 'duplicates') {
+    content = <Dashboard />;
   } else if (currentView === 'admin' && isSuperAdmin) {
     content = <AdminManagement />;
   } else if (currentView === 'admin') {

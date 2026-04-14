@@ -19,6 +19,7 @@ export interface Item {
   id: string;
   catId: number;
   title: string;
+  description?: string;
   status: StatusValue;
   owner: string;
   start: number;
@@ -30,7 +31,7 @@ export interface Item {
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
 
-export type ViewId = 'dashboard' | 'gantt' | 'refs' | 'admin' | number;
+export type ViewId = 'dashboard' | 'gantt' | 'refs' | 'admin' | 'duplicates' | number;
 
 export type UserRole = 'user' | 'admin' | 'superadmin';
 
