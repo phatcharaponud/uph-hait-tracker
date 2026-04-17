@@ -6,6 +6,7 @@ import SyncIndicator from './SyncIndicator';
 import { FileText, Eye, FolderOpen, LogOut, Settings, Search } from 'lucide-react';
 import { HAIT_DRIVE_FOLDER_URL } from '../data/config';
 import { findDuplicateItems } from '../lib/duplicateCheck';
+import { todayBEShort, todayDayNumber, TOTAL_DAYS, deadlineBE } from '../lib/date';
 
 function SidebarCatItem({ id, icon, code, name, color }: {
   id: ViewId; icon: string; code: string; name: string; color: string;
@@ -16,8 +17,11 @@ function SidebarCatItem({ id, icon, code, name, color }: {
   const active = currentView === id;
 
   return (
-    <div
-      className={`rounded-xl px-3 py-2.5 cursor-pointer flex items-center gap-3 transition-all ${
+    <button
+      type="button"
+      aria-label={`${code} ${name}${pct !== null ? ` ${pct}%` : ''}`}
+      aria-current={active ? 'page' : undefined}
+      className={`w-full text-left rounded-xl px-3 py-2.5 cursor-pointer flex items-center gap-3 transition-all ${
         active
           ? 'text-white shadow-lg'
           : 'hover:bg-slate-50'
@@ -28,7 +32,7 @@ function SidebarCatItem({ id, icon, code, name, color }: {
       } : undefined}
       onClick={() => setView(id)}
     >
-      <span className="text-xl">{icon}</span>
+      <span className="text-xl" aria-hidden="true">{icon}</span>
       <div className="flex-1 min-w-0">
         <div
           className="text-[10px] font-mono font-bold"
@@ -46,17 +50,17 @@ function SidebarCatItem({ id, icon, code, name, color }: {
           {pct}%
         </span>
       )}
-    </div>
+    </button>
   );
 }
 
 function TodayCounter() {
-  const today = 12;
-  const daysLeft = 61 - today;
+  const today = todayDayNumber();
+  const daysLeft = Math.max(TOTAL_DAYS - today, 0);
 
   return (
     <div className="p-3 border-t border-slate-200 text-xs text-slate-500 space-y-1">
-      <p>📅 <span className="font-semibold text-slate-700">12 เม.ย. 2569</span></p>
+      <p>📅 <span className="font-semibold text-slate-700">{todayBEShort()}</span></p>
       <p>⏱ เหลือ <span className="font-bold text-red-600">{daysLeft}</span> วัน</p>
       <SyncIndicator />
     </div>
@@ -70,6 +74,10 @@ function ReportModeToggle() {
   return (
     <div className="px-3 py-2 border-t border-slate-200">
       <button
+        type="button"
+        role="switch"
+        aria-checked={reportMode}
+        aria-label="สลับโหมดรายงาน/แก้ไข"
         onClick={() => setReportMode(!reportMode)}
         className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
           reportMode
@@ -78,7 +86,7 @@ function ReportModeToggle() {
         }`}
         style={reportMode ? { background: '#1e3a5f' } : undefined}
       >
-        {reportMode ? <Eye size={14} /> : <FileText size={14} />}
+        {reportMode ? <Eye size={14} aria-hidden="true" /> : <FileText size={14} aria-hidden="true" />}
         {reportMode ? 'โหมดรายงาน' : 'โหมดแก้ไข'}
       </button>
     </div>
@@ -124,6 +132,9 @@ function UserPanel() {
       </div>
       {isAdmin && (
         <button
+          type="button"
+          aria-label="ตรวจสอบรายการซ้ำ"
+          aria-current={currentView === 'duplicates' ? 'page' : undefined}
           onClick={() => setView('duplicates')}
           className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
             currentView === 'duplicates'
@@ -132,7 +143,7 @@ function UserPanel() {
           }`}
           style={currentView === 'duplicates' ? { background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' } : undefined}
         >
-          <Search size={14} />
+          <Search size={14} aria-hidden="true" />
           🔍 ตรวจสอบรายการซ้ำ
           {dupCount > 0 && (
             <span className="ml-auto bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
@@ -143,6 +154,9 @@ function UserPanel() {
       )}
       {isSuperAdmin && (
         <button
+          type="button"
+          aria-label="จัดการสิทธิ์ Admin"
+          aria-current={currentView === 'admin' ? 'page' : undefined}
           onClick={() => setView('admin')}
           className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
             currentView === 'admin'
@@ -151,15 +165,17 @@ function UserPanel() {
           }`}
           style={currentView === 'admin' ? { background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' } : undefined}
         >
-          <Settings size={14} />
+          <Settings size={14} aria-hidden="true" />
           ⚙️ จัดการสิทธิ์ Admin
         </button>
       )}
       <button
+        type="button"
+        aria-label="ออกจากระบบ"
         onClick={logout}
         className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all"
       >
-        <LogOut size={14} />
+        <LogOut size={14} aria-hidden="true" />
         ออกจากระบบ
       </button>
     </div>
@@ -177,12 +193,12 @@ export default function Sidebar() {
         <h1 className="font-bold text-xl">HAIT Tracker</h1>
         <p className="text-xs opacity-90 mt-1">รพ.มหาวิทยาลัยพะเยา</p>
         <div className="mt-3 text-xs bg-white/20 rounded-lg px-3 py-2">
-          🎯 เป้าหมาย: เสร็จภายใน พ.ค. 2569
+          🎯 เป้าหมาย: เสร็จภายใน {deadlineBE()}
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+      <nav aria-label="เมนูหลัก" className="flex-1 p-3 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map((c) => (
           <SidebarCatItem key={String(c.id)} {...c} id={c.id as ViewId} />
         ))}

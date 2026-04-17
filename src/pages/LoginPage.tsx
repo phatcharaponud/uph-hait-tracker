@@ -1,5 +1,6 @@
 import { GoogleLogin } from '@react-oauth/google';
 import { useStore } from '../store/useStore';
+import { deadlineBE } from '../lib/date';
 
 export default function LoginPage() {
   const login = useStore((s) => s.login);
@@ -71,7 +72,7 @@ export default function LoginPage() {
             className="inline-block text-xs px-3 py-1.5 rounded-full text-white font-medium"
             style={{ background: 'linear-gradient(135deg, #1e3a5f, #2563eb)' }}
           >
-            🎯 เป้าหมาย: เสร็จภายใน พ.ค. 2569
+            🎯 เป้าหมาย: เสร็จภายใน {deadlineBE()}
           </span>
         </div>
       </div>

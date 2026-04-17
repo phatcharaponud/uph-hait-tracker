@@ -14,8 +14,7 @@ import LoginPage from './pages/LoginPage';
 import DuplicateCheckPage from './pages/DuplicateCheckPage';
 import { useStore } from './store/useStore';
 import { useKeyboardShortcuts } from './lib/useKeyboardShortcuts';
-
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
+import { env } from './lib/env';
 
 function AppContent() {
   const currentView = useStore((s) => s.currentView);
@@ -93,7 +92,7 @@ function AppContent() {
 function App() {
   return (
     <ErrorBoundary>
-      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <GoogleOAuthProvider clientId={env.GOOGLE_CLIENT_ID}>
         <AppContent />
       </GoogleOAuthProvider>
     </ErrorBoundary>

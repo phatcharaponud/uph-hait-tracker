@@ -201,6 +201,52 @@ function requireSuperAdmin(email) {
   }
 }
 
+// ===== Validation =====
+
+var FIELD_LIMITS = {
+  title: 200,
+  notes: 1000,
+  documentUrl: 500,
+  refUrl: 500,
+  ref: 500,
+  owner: 100,
+  id: 32,
+  status: 32
+};
+
+var VALID_STATUSES = ["not_started", "in_progress", "completed", "needs_revision"];
+var MAX_DAY = 366; // generous; frontend uses project-specific TOTAL_DAYS
+
+function validateItemChanges(changes, fields) {
+  for (var i = 0; i < fields.length; i++) {
+    var k = fields[i];
+    var v = changes[k];
+    if (v === undefined || v === null) continue;
+
+    if (FIELD_LIMITS[k] !== undefined) {
+      var str = String(v);
+      if (str.length > FIELD_LIMITS[k]) {
+        throw new Error("Field '" + k + "' exceeds max length " + FIELD_LIMITS[k]);
+      }
+    }
+    if (k === "status" && String(v) && VALID_STATUSES.indexOf(String(v)) === -1) {
+      throw new Error("Invalid status: " + v);
+    }
+    if (k === "start" || k === "end") {
+      var n = Number(v);
+      if (!isFinite(n) || n < 1 || n > MAX_DAY || Math.floor(n) !== n) {
+        throw new Error("Field '" + k + "' must be integer 1.." + MAX_DAY);
+      }
+    }
+    if ((k === "documentUrl" || k === "refUrl" || k === "ref") && String(v).length > 0) {
+      var url = String(v);
+      if (!/^https?:\/\//i.test(url)) {
+        throw new Error("Field '" + k + "' must be http(s) URL");
+      }
+    }
+  }
+}
+
 // ===== Business Logic =====
 
 function listItems() {
@@ -242,6 +288,9 @@ function updateItem(itemId, changes, email) {
         ? Object.keys(changes)
         : Object.keys(changes).filter(k => k === "status" || k === "owner");
 
+      // Server-side validation of known fields
+      validateItemChanges(changes, allowedFields);
+
       allowedFields.forEach(k => {
         const col = headers.indexOf(k);
         if (col >= 0) sh.getRange(rowNum, col + 1).setValue(changes[k]);
@@ -265,6 +314,8 @@ function createItem(item, email) {
   if (!adminResult.isAdmin) {
     throw new Error("Only admin can create items.");
   }
+
+  validateItemChanges(item, Object.keys(item));
 
   const sh = getSheet(SHEETS.ITEMS);
   const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];

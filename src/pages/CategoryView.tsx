@@ -7,21 +7,38 @@ import { FolderOpen, Pencil, Trash2, Plus, FileDown } from 'lucide-react';
 import { getCategoryDriveUrl } from '../data/config';
 import { exportCategoryPdf } from '../lib/exportPdf';
 import ItemTooltip from '../components/ItemTooltip';
+import { dayToDate, dayToDateShort, todayDayNumber, TOTAL_DAYS } from '../lib/date';
+import { LIMITS, validateText, validateDay } from '../lib/validation';
 
-const TODAY = 12;
-
-function dayToDate(d: number) {
-  return d <= 30 ? `${d} เม.ย.` : `${d - 30} พ.ค.`;
-}
-
-function dayToDateShort(d: number) {
-  return d <= 30 ? `${d} เม.ย. 69` : `${d - 30} พ.ค. 69`;
-}
+const TODAY = todayDayNumber();
 
 // Inline editable text cell (admin only)
-function EditableText({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+function EditableText({
+  value,
+  onSave,
+  maxLen = LIMITS.title,
+  label = 'ชื่อรายการ',
+}: {
+  value: string;
+  onSave: (v: string) => void;
+  maxLen?: number;
+  label?: string;
+}) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
+  const showToast = useStore((s) => s.showToast);
+
+  const commit = () => {
+    if (draft === value) { setEditing(false); return; }
+    const result = validateText(draft, maxLen, { label });
+    if (!result.ok) {
+      showToast(result.error);
+      setEditing(false);
+      return;
+    }
+    onSave(result.value);
+    setEditing(false);
+  };
 
   if (!editing) {
     return (
@@ -38,10 +55,12 @@ function EditableText({ value, onSave }: { value: string; onSave: (v: string) =>
     <input
       autoFocus
       value={draft}
+      maxLength={maxLen}
+      aria-label={label}
       onChange={(e) => setDraft(e.target.value)}
-      onBlur={() => { if (draft !== value) onSave(draft); setEditing(false); }}
+      onBlur={commit}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') { if (draft !== value) onSave(draft); setEditing(false); }
+        if (e.key === 'Enter') commit();
         if (e.key === 'Escape') setEditing(false);
       }}
       className="w-full text-xs px-1.5 py-0.5 border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
@@ -65,29 +84,28 @@ function EditableDay({ value, onSave }: { value: number; onSave: (v: number) => 
       </span>
     );
   }
+  const commit = () => {
+    const n = parseInt(draft);
+    const result = validateDay(n);
+    if (result.ok && n !== value) onSave(n);
+    setEditing(false);
+  };
   return (
     <input
       autoFocus
       type="number"
       min={1}
-      max={61}
+      max={TOTAL_DAYS}
       value={draft}
+      aria-label="วันครบกำหนด"
       onChange={(e) => setDraft(e.target.value)}
-      onBlur={() => {
-        const n = parseInt(draft);
-        if (!isNaN(n) && n >= 1 && n <= 61 && n !== value) onSave(n);
-        setEditing(false);
-      }}
+      onBlur={commit}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          const n = parseInt(draft);
-          if (!isNaN(n) && n >= 1 && n <= 61 && n !== value) onSave(n);
-          setEditing(false);
-        }
+        if (e.key === 'Enter') commit();
         if (e.key === 'Escape') setEditing(false);
       }}
       className="w-16 text-xs px-1.5 py-0.5 border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
-      title="วันที่ 1-30=เม.ย., 31-61=พ.ค."
+      title={`วันที่ 1–${TOTAL_DAYS} ของช่วงเวลาโครงการ`}
     />
   );
 }
@@ -113,18 +131,29 @@ function EditableRange({ start, end, onSaveStart, onSaveEnd }: {
   }
 
   const save = () => {
-    const s = parseInt(draftS), e = parseInt(draftE);
-    if (!isNaN(s) && s >= 1 && s <= 61 && s !== start) onSaveStart(s);
-    if (!isNaN(e) && e >= 1 && e <= 61 && e !== end) onSaveEnd(e);
+    const s = parseInt(draftS);
+    const e = parseInt(draftE);
+    const rs = validateDay(s);
+    const re = validateDay(e);
+    if (rs.ok && re.ok && s > e) {
+      // swap if inverted
+      if (s !== start) onSaveStart(e);
+      if (e !== end) onSaveEnd(s);
+    } else {
+      if (rs.ok && s !== start) onSaveStart(s);
+      if (re.ok && e !== end) onSaveEnd(e);
+    }
     setEditing(false);
   };
 
   return (
     <div className="flex items-center gap-1">
-      <input type="number" min={1} max={61} value={draftS} onChange={(e) => setDraftS(e.target.value)}
+      <input type="number" min={1} max={TOTAL_DAYS} value={draftS} onChange={(e) => setDraftS(e.target.value)}
+        aria-label="วันเริ่ม"
         className="w-12 text-xs px-1 py-0.5 border border-blue-300 rounded" autoFocus />
       <span>-</span>
-      <input type="number" min={1} max={61} value={draftE} onChange={(e) => setDraftE(e.target.value)}
+      <input type="number" min={1} max={TOTAL_DAYS} value={draftE} onChange={(e) => setDraftE(e.target.value)}
+        aria-label="วันสิ้นสุด"
         className="w-12 text-xs px-1 py-0.5 border border-blue-300 rounded"
         onBlur={save} onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false); }} />
     </div>
@@ -240,7 +269,7 @@ export default function CategoryView({ catId }: { catId: number }) {
     const newId = `${catId}.${maxId + 1}`;
     const newItem: Item = {
       id: newId, catId, title: 'รายการใหม่', status: 'not_started',
-      owner: 'CIO', start: TODAY, end: 61, ref: '', documentUrl: '', notes: '',
+      owner: 'CIO', start: Math.max(TODAY, 1), end: TOTAL_DAYS, ref: '', documentUrl: '', notes: '',
     };
     addItem(newItem);
   };
