@@ -1,26 +1,36 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { HAIT_CATEGORIES } from '../data/categories';
 import { STATUSES } from '../data/statuses';
 import { useStore } from '../store/useStore';
 import { ZoomIn, ZoomOut, FileDown } from 'lucide-react';
 import { exportGanttPdf } from '../lib/exportPdf';
+import { TOTAL_DAYS, dayToDate, todayDayNumber, getMonthSegments, dayNumberToDayOfMonth, dayToDateFull } from '../lib/date';
 
-const TODAY = 12;
-const TOTAL_DAYS = 61;
+const TODAY = todayDayNumber();
 const ZOOM_LEVELS = [8, 11, 14, 18, 22];
-
-function dayToDate(d: number) {
-  return d <= 30 ? `${d} เม.ย.` : `${d - 30} พ.ค.`;
-}
+const SMALL_SCREEN_PX = 640; // Tailwind `sm` breakpoint
 
 export default function GanttChart() {
   const items = useStore((s) => s.items);
-  const [zoomIdx, setZoomIdx] = useState(1); // start at 11px
+  const [isSmallScreen, setIsSmallScreen] = useState(
+    typeof window !== 'undefined' && window.innerWidth < SMALL_SCREEN_PX
+  );
+  const [zoomIdx, setZoomIdx] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < SMALL_SCREEN_PX ? 0 : 1
+  );
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${SMALL_SCREEN_PX - 1}px)`);
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsSmallScreen(e.matches);
+    handler(mq);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
   const colW = ZOOM_LEVELS[zoomIdx];
-  const labelW = 200;
+  const labelW = isSmallScreen ? 120 : 200;
   const rowH = 22;
   const catHeaderH = 24;
 
@@ -40,25 +50,27 @@ export default function GanttChart() {
         <div>
           <h2 className="text-xl font-bold text-navy">📅 Gantt Chart</h2>
           <p className="text-slate-500 text-xs">
-            1 เม.ย. – 31 พ.ค. 2569 · เส้นแดง = วันนี้
+            {dayToDateFull(1)} – {dayToDateFull(TOTAL_DAYS)} · เส้นแดง = วันนี้
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
+            type="button"
+            aria-label="ดาวน์โหลด Gantt Chart เป็น PDF"
             onClick={() => exportGanttPdf()}
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-white hover:opacity-90"
             style={{ background: '#1e3a5f' }}
             title="ดาวน์โหลด Gantt Chart เป็น PDF"
           >
-            <FileDown size={13} /> 📄 PDF
+            <FileDown size={13} aria-hidden="true" /> 📄 PDF
           </button>
-          <div className="flex items-center gap-1">
-            <button onClick={zoomOut} disabled={zoomIdx === 0} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30" title="ซูมออก">
-              <ZoomOut size={16} />
+          <div className="flex items-center gap-1" role="group" aria-label="ซูม Gantt">
+            <button type="button" aria-label="ซูมออก" onClick={zoomOut} disabled={zoomIdx === 0} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30" title="ซูมออก">
+              <ZoomOut size={16} aria-hidden="true" />
             </button>
-            <span className="text-[10px] text-slate-500 w-8 text-center">{colW}px</span>
-            <button onClick={zoomIn} disabled={zoomIdx === ZOOM_LEVELS.length - 1} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30" title="ซูมเข้า">
-              <ZoomIn size={16} />
+            <span className="text-[10px] text-slate-500 w-8 text-center" aria-live="polite">{colW}px</span>
+            <button type="button" aria-label="ซูมเข้า" onClick={zoomIn} disabled={zoomIdx === ZOOM_LEVELS.length - 1} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30" title="ซูมเข้า">
+              <ZoomIn size={16} aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -72,20 +84,24 @@ export default function GanttChart() {
             <div className="shrink-0 px-2 py-1 sticky left-0 z-20" style={{ width: labelW, background: '#1e3a5f' }}>
               รายการ
             </div>
-            <div className="py-1 text-center border-l border-white/30" style={{ width: colW * 30, background: '#1e3a5f' }}>
-              เมษายน 2569
-            </div>
-            <div className="py-1 text-center border-l border-white/30 bg-red-600" style={{ width: colW * 31 }}>
-              พฤษภาคม 2569
-            </div>
+            {getMonthSegments().map((seg, idx) => (
+              <div
+                key={`${seg.year}-${seg.monthIndex}`}
+                className={`py-1 text-center border-l border-white/30 ${idx % 2 === 1 ? 'bg-red-600' : ''}`}
+                style={{ width: colW * seg.dayCount, background: idx % 2 === 0 ? '#1e3a5f' : undefined }}
+              >
+                {seg.label}
+              </div>
+            ))}
           </div>
 
           {/* Day numbers */}
           <div className="flex bg-slate-50 border-b text-[8px] text-slate-500 sticky top-[22px] z-10">
             <div className="shrink-0 sticky left-0 z-20 bg-slate-50" style={{ width: labelW }} />
             {Array.from({ length: TOTAL_DAYS }, (_, i) => {
-              const d = i < 30 ? i + 1 : i - 29;
-              const isToday = i + 1 === TODAY;
+              const dayNum = i + 1;
+              const d = dayNumberToDayOfMonth(dayNum);
+              const isToday = dayNum === TODAY;
               return (
                 <div
                   key={i}

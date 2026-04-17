@@ -3,10 +3,7 @@ import { saveAs } from 'file-saver';
 import { HAIT_CATEGORIES } from '../data/categories';
 import { STATUSES } from '../data/statuses';
 import type { Item } from '../types';
-
-function dayToDateShort(d: number) {
-  return d <= 30 ? `${d} เม.ย. 69` : `${d - 30} พ.ค. 69`;
-}
+import { dayToDateShort } from './date';
 
 function statusLabel(s: string): string {
   return STATUSES[s as keyof typeof STATUSES]?.label || s;

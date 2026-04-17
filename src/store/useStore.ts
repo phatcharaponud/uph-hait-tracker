@@ -12,25 +12,55 @@ interface StoredUser {
   expiresAt: number;
 }
 
-function loadStoredUser(): User | null {
+// sessionStorage clears when the browser/tab closes; this limits exposure
+// of name/email/role/picture compared to localStorage.
+function storage(): Storage | null {
   try {
-    const raw = localStorage.getItem(USER_STORAGE_KEY);
+    return typeof window !== 'undefined' ? window.sessionStorage : null;
+  } catch {
+    return null;
+  }
+}
+
+function loadStoredUser(): User | null {
+  const s = storage();
+  if (!s) return null;
+  try {
+    const raw = s.getItem(USER_STORAGE_KEY);
     if (!raw) return null;
     const stored: StoredUser = JSON.parse(raw);
     if (Date.now() > stored.expiresAt) {
-      localStorage.removeItem(USER_STORAGE_KEY);
+      s.removeItem(USER_STORAGE_KEY);
       return null;
     }
     return stored.user;
   } catch {
-    localStorage.removeItem(USER_STORAGE_KEY);
+    s.removeItem(USER_STORAGE_KEY);
     return null;
   }
 }
 
 function saveStoredUser(user: User) {
+  const s = storage();
+  if (!s) return;
+  // One-time migration: purge any prior copy in localStorage so we don't leak it.
+  try {
+    if (typeof window !== 'undefined') window.localStorage.removeItem(USER_STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
   const stored: StoredUser = { user, expiresAt: Date.now() + USER_EXPIRY_MS };
-  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(stored));
+  s.setItem(USER_STORAGE_KEY, JSON.stringify(stored));
+}
+
+function clearStoredUser() {
+  const s = storage();
+  s?.removeItem(USER_STORAGE_KEY);
+  try {
+    if (typeof window !== 'undefined') window.localStorage.removeItem(USER_STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
 }
 
 interface AppState {
@@ -168,6 +198,10 @@ export const useStore = create<AppState>((set, get) => ({
         hd?: string;
       }>(credential);
 
+      if (!decoded.hd) {
+        get().showToast('ไม่พบข้อมูลโดเมนจาก Google — กรุณาใช้บัญชี @up.ac.th');
+        return;
+      }
       if (decoded.hd !== 'up.ac.th') {
         get().showToast('อนุญาตเฉพาะอีเมล @up.ac.th เท่านั้น');
         return;
@@ -202,7 +236,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   logout: () => {
-    localStorage.removeItem(USER_STORAGE_KEY);
+    clearStoredUser();
     set({
       user: null,
       isAdmin: false,

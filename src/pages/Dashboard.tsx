@@ -7,8 +7,9 @@ import { X, FolderOpen, FileDown, FileSpreadsheet } from 'lucide-react';
 import { HAIT_DRIVE_FOLDER_URL } from '../data/config';
 import { exportDashboardPdf } from '../lib/exportPdf';
 import { exportExcel } from '../lib/exportExcel';
+import { todayDayNumber, deadlineBE } from '../lib/date';
 
-const TODAY = 12;
+const TODAY = todayDayNumber();
 
 function StatusModal({
   statusKey,
@@ -151,7 +152,7 @@ export default function Dashboard() {
           <div>
             <h2 className="text-2xl font-bold text-navy">ภาพรวม HAIT</h2>
             <p className="text-slate-500 text-sm">
-              เป้าหมาย: ทุกหมวดเสร็จภายใน <span className="font-bold text-red-600">31 พฤษภาคม 2569</span>
+              เป้าหมาย: ทุกหมวดเสร็จภายใน <span className="font-bold text-red-600">{deadlineBE()}</span>
             </p>
           </div>
           <div className="shrink-0 flex items-center gap-2">

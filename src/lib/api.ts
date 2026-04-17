@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL as string;
+import { env } from './env';
+
+const API_URL = env.API_URL;
 
 export interface ApiResponse<T = unknown> {
   ok: boolean;

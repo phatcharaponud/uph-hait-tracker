@@ -6,19 +6,12 @@ import { HOSPITAL_NAME } from '../data/config';
 import type { Item, User } from '../types';
 import { SARABUN_REGULAR } from './fonts/sarabun-regular';
 import { SARABUN_BOLD } from './fonts/sarabun-bold';
+import { dayToDateShort, todayBE, todayDayNumber } from './date';
 
-const TODAY = 12;
-
-function dayToDateShort(d: number) {
-  return d <= 30 ? `${d} เม.ย. 69` : `${d - 30} พ.ค. 69`;
-}
+const TODAY = todayDayNumber();
 
 function dayToRange(s: number, e: number) {
   return `${dayToDateShort(s)} - ${dayToDateShort(e)}`;
-}
-
-function todayBE() {
-  return '12 เมษายน 2569';
 }
 
 /** Create a jsPDF instance with Sarabun Thai font registered */

@@ -7,12 +7,14 @@ export default function Header() {
   const setView = useStore((s) => s.setView);
 
   return (
-    <div
+    <header
+      role="banner"
       className="md:hidden fixed top-0 left-0 right-0 text-white p-3 flex justify-between items-center z-20 shadow-lg"
       style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)' }}
     >
       <span className="font-bold">HAIT Tracker</span>
       <select
+        aria-label="เลือกหน้า"
         value={String(currentView)}
         onChange={(e) => {
           const v = e.target.value;
@@ -27,6 +29,6 @@ export default function Header() {
           </option>
         ))}
       </select>
-    </div>
+    </header>
   );
 }
