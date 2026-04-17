@@ -269,7 +269,7 @@ export default function CategoryView({ catId }: { catId: number }) {
     const newId = `${catId}.${maxId + 1}`;
     const newItem: Item = {
       id: newId, catId, title: 'รายการใหม่', status: 'not_started',
-      owner: 'CIO', start: Math.max(TODAY, 1), end: TOTAL_DAYS, ref: '', documentUrl: '', notes: '',
+      owner: OWNERS[0], start: Math.max(TODAY, 1), end: TOTAL_DAYS, ref: '', documentUrl: '', notes: '',
     };
     addItem(newItem);
   };

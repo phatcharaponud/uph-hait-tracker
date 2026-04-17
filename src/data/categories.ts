@@ -7,28 +7,23 @@ export const NAV_ITEMS: Category[] = [
 ];
 
 export const HAIT_CATEGORIES: Category[] = [
-  { id: 1, icon: '📋', code: 'HAIT 1', name: 'แผนแม่บท IT',          color: '#1e3a5f' },
-  { id: 2, icon: '⚠️', code: 'HAIT 2', name: 'การจัดการความเสี่ยง',    color: '#2563eb' },
-  { id: 3, icon: '🔒', code: 'HAIT 3', name: 'ความมั่นคงปลอดภัย',     color: '#dc2626' },
-  { id: 4, icon: '🛠', code: 'HAIT 4', name: 'Service & Incident',   color: '#ea580c' },
-  { id: 5, icon: '📑', code: 'HAIT 5', name: 'คุณภาพข้อมูล',          color: '#16a34a' },
-  { id: 6, icon: '🧩', code: 'HAIT 6', name: 'ออกแบบระบบ',           color: '#7c3aed' },
-  { id: 7, icon: '⚙️', code: 'HAIT 7', name: 'Capacity & Competency', color: '#0891b2' },
+  { id: 1, icon: '📋', code: 'HAIT 1', name: 'แผนแม่บทเทคโนโลยีสารสนเทศ',              color: '#1e3a5f' },
+  { id: 2, icon: '⚠️', code: 'HAIT 2', name: 'การจัดการความเสี่ยงในระบบ IT',            color: '#2563eb' },
+  { id: 3, icon: '🔒', code: 'HAIT 3', name: 'การจัดการความมั่นคงปลอดภัยในระบบ IT',      color: '#dc2626' },
+  { id: 4, icon: '🛠', code: 'HAIT 4', name: 'การจัดระบบบริการ IT โรงพยาบาล',           color: '#ea580c' },
+  { id: 5, icon: '📑', code: 'HAIT 5', name: 'การควบคุมคุณภาพข้อมูลในระบบ IT',           color: '#16a34a' },
+  { id: 6, icon: '🧩', code: 'HAIT 6', name: 'การควบคุมคุณภาพการพัฒนาโปรแกรม',          color: '#7c3aed' },
+  { id: 7, icon: '⚙️', code: 'HAIT 7', name: 'การจัดการศักยภาพ การเปลี่ยนแปลง และสมรรถนะ', color: '#0891b2' },
 ];
 
 export const ALL_CATEGORIES: Category[] = [...NAV_ITEMS, ...HAIT_CATEGORIES];
 
 export const OWNERS = [
-  'CIO',
-  'หัวหน้า IT',
-  'IT Security',
-  'IT Infrastructure',
-  'IT Support',
-  'Developer',
-  'เวชระเบียน',
-  'HR',
-  'แผนยุทธศาสตร์',
-  'คณะทำงาน HAIT',
+  'งานแผน + IT',
+  'IT + งาน RM',
+  'IT ทั้งหมด',
+  'IT + งาน HA',
+  'Auditor + เวชระเบียน',
 ];
 
 export const REFS = {

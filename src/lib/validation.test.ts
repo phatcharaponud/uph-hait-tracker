@@ -31,13 +31,13 @@ describe('validateText', () => {
 describe('validateDay', () => {
   it('accepts days within timeline', () => {
     expect(validateDay(1).ok).toBe(true);
-    expect(validateDay(30).ok).toBe(true);
-    expect(validateDay(61).ok).toBe(true);
+    expect(validateDay(90).ok).toBe(true);
+    expect(validateDay(181).ok).toBe(true);
   });
 
   it('rejects out-of-range or non-integer', () => {
     expect(validateDay(0).ok).toBe(false);
-    expect(validateDay(62).ok).toBe(false);
+    expect(validateDay(182).ok).toBe(false);
     expect(validateDay(1.5).ok).toBe(false);
     expect(validateDay(Number.NaN).ok).toBe(false);
   });

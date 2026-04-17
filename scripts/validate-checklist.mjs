@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 /**
- * Validates src/data/items.ts against docs/HAIT_structure.md.
+ * Validates src/data/items.ts against docs/HAIT_structure.md (TMI reference).
+ *
+ * NOTE: as of v1.1 the app's checklist follows the Excel action plan, which
+ * uses a different numbering scheme (e.g. 1.1, 1.2) than the TMI reference
+ * structure (1.1.1, 1.1.2). This script is kept for manual coverage checks
+ * against the TMI doc and is NOT run in CI.
  *
  * Fails (exit 1) when:
  *   - an item ID in the code is not in the doc

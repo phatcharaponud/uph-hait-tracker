@@ -1,57 +1,93 @@
 import type { Item } from '../types';
 import { REFS } from './categories';
+import { beDateToDayNumber } from '../lib/date';
 
-export const INITIAL_ITEMS: Item[] = [
-  // หมวด 1 — แผนแม่บท IT
-  { id: '1.1.1', catId: 1, title: 'ข้อมูลพื้นฐานโรงพยาบาล',                   status: 'completed',   owner: 'แผนยุทธศาสตร์', start: 1,  end: 35, ref: REFS.cmu, documentUrl: '', notes: '' },
-  { id: '1.1.2', catId: 1, title: 'สรุปแผนยุทธศาสตร์ของโรงพยาบาล',             status: 'completed',   owner: 'แผนยุทธศาสตร์', start: 1,  end: 38, ref: REFS.cmu, documentUrl: '', notes: '' },
-  { id: '1.1.3', catId: 1, title: 'ตารางวิเคราะห์ปัจจัยความสำเร็จ IT',           status: 'in_progress', owner: 'CIO',          start: 5,  end: 42, ref: REFS.cmu, documentUrl: '', notes: '' },
-  { id: '1.1.4', catId: 1, title: 'แผนยุทธศาสตร์ IT',                          status: 'in_progress', owner: 'CIO',          start: 8,  end: 48, ref: REFS.cmu, documentUrl: '', notes: '' },
-  { id: '1.1.5', catId: 1, title: 'แผนปฏิบัติการ IT ปีปัจจุบัน',                status: 'not_started', owner: 'หัวหน้า IT',    start: 15, end: 52, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '1.1.6', catId: 1, title: 'ประเมินผลการดำเนินงานปีที่ผ่านมา',           status: 'not_started', owner: 'CIO',          start: 20, end: 55, ref: REFS.banbung, documentUrl: '', notes: '' },
+/**
+ * HAIT v1.1 action-plan items (42 total) — sourced from
+ * "แผนดำเนินการ HAIT v1.1" (MUP Hospital).
+ *
+ * Dates are kept as Thai Buddhist Era (YYYY-MM-DD) strings so the plan stays
+ * human-readable; day numbers are derived at load time from the project
+ * timeline in src/lib/date.ts.
+ */
+interface PlanItem {
+  id: string;
+  catId: number;
+  title: string;
+  owner: string;
+  startDate: string;
+  dueDate: string;
+  ref: string;
+}
 
-  // หมวด 2 — การจัดการความเสี่ยง
-  { id: '2.1.1', catId: 2, title: 'ประเมินจุดอ่อนช่องโหว่ประจำปี',              status: 'completed',      owner: 'IT Security',  start: 1,  end: 33, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '2.1.2', catId: 2, title: 'คะแนนความเสี่ยง (PxI)',                     description: 'Probability x Impact — วิธีประเมินความเสี่ยงโดยคูณระหว่างโอกาสเกิด (P) กับผลกระทบ (I) เช่น 3x4=12 = ความเสี่ยงปานกลาง', status: 'in_progress',    owner: 'IT Security',  start: 8,  end: 40, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '2.1.3', catId: 2, title: 'แผนกลยุทธ์จัดการความเสี่ยง 4 ตาราง',         status: 'needs_revision', owner: 'CIO',          start: 10, end: 45, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '2.1.4', catId: 2, title: 'แผนปฏิบัติการจัดการความเสี่ยง',              status: 'not_started',    owner: 'IT Security',  start: 15, end: 55, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '2.1.5', catId: 2, title: 'ประเมินผลการจัดการความเสี่ยง',               status: 'not_started',    owner: 'CIO',          start: 25, end: 58, ref: REFS.banbung, documentUrl: '', notes: '' },
+const PLAN: PlanItem[] = [
+  // หมวด 1 — แผนแม่บทเทคโนโลยีสารสนเทศ
+  { id: '1.1', catId: 1, title: 'จัดทำแผนแม่บท IT สำเร็จ (มีสารบัญ เลขหน้า แผนยุทธศาสตร์ และแผนปฏิบัติการประจำปี)', owner: 'งานแผน + IT', startDate: '2569-02-17', dueDate: '2569-04-13', ref: REFS.cmu },
+  { id: '1.2', catId: 1, title: 'แสดงการเชื่อมโยงยุทธศาสตร์โรงพยาบาล ผ่านการวิเคราะห์ปัจจัยแห่งความสำเร็จมาสู่ยุทธศาสตร์ IT', owner: 'งานแผน + IT', startDate: '2569-02-17', dueDate: '2569-04-13', ref: REFS.cmu },
+  { id: '1.3', catId: 1, title: 'สรุปยุทธศาสตร์ IT ทุกข้อ ที่ถ่ายทอดลงไปเป็นแผนปฏิบัติการ (โครงการต่างๆ)', owner: 'งานแผน + IT', startDate: '2569-02-17', dueDate: '2569-04-13', ref: REFS.cmu },
+  { id: '1.4', catId: 1, title: 'จัดทำแผนปฏิบัติการของปีปัจจุบัน กำหนดระยะเวลาดำเนินโครงการ งบประมาณ ผู้รับผิดชอบ', owner: 'งานแผน + IT', startDate: '2569-02-17', dueDate: '2569-04-13', ref: REFS.cmu },
 
-  // หมวด 3 — ความมั่นคงปลอดภัย
-  { id: '3.1.1', catId: 3, title: 'นโยบายความมั่นคงปลอดภัย + PDPA',            description: 'PDPA = พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล — กำหนดนโยบายการเก็บ ใช้ เปิดเผยข้อมูลส่วนบุคคลของผู้ป่วยและบุคลากร', status: 'completed',   owner: 'CIO',              start: 1,  end: 30, ref: REFS.sarapee, documentUrl: '', notes: '' },
-  { id: '3.1.2', catId: 3, title: 'ระเบียบปฏิบัติความมั่นคงปลอดภัย',            status: 'completed',   owner: 'IT Security',      start: 1,  end: 35, ref: REFS.sarapee, documentUrl: '', notes: '' },
-  { id: '3.1.3', catId: 3, title: 'ประเมินความรับรู้ของบุคลากร',                status: 'in_progress', owner: 'HR',               start: 12, end: 42, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '3.1.4', catId: 3, title: 'ประเมินความเข้าใจของบุคลากร',               status: 'not_started', owner: 'HR',               start: 15, end: 48, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '3.1.5', catId: 3, title: 'ประเมินการปฏิบัติของบุคลากร',                status: 'not_started', owner: 'HR',               start: 20, end: 55, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '3.1.6', catId: 3, title: 'สรุปการปรับปรุง Data Center',                status: 'in_progress', owner: 'IT Infrastructure', start: 5,  end: 58, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '3.2.1', catId: 3, title: 'HAIT Plus ข้อ A-R (18 หัวข้อ)',             description: 'รายการ 18 ข้อจากมาตรฐาน HAIT Plus ที่ใช้ประเมินความมั่นคงปลอดภัยขั้นสูง เช่น A. Access Control, B. Backup Policy, C. Change Management ฯลฯ', status: 'not_started', owner: 'IT Security',       start: 15, end: 60, ref: REFS.tmiDoc, documentUrl: '', notes: '' },
-  { id: '3.2.2', catId: 3, title: 'คู่มือดูแล Data Center',                    status: 'needs_revision', owner: 'IT Infrastructure', start: 10, end: 45, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '3.2.3', catId: 3, title: 'คู่มือสำรองข้อมูล',                         status: 'in_progress', owner: 'IT Infrastructure', start: 8,  end: 40, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '3.3',   catId: 3, title: 'แผน BCP + รายงานผลการซ้อม',                description: 'Business Continuity Plan — แผนรักษาความต่อเนื่องของการให้บริการเมื่อเกิดเหตุฉุกเฉิน เช่น ไฟไหม้ น้ำท่วม ระบบล่ม', status: 'completed',   owner: 'คณะทำงาน HAIT',     start: 1,  end: 35, ref: REFS.vachira, documentUrl: '', notes: '' },
-  { id: '3.4',   catId: 3, title: 'แผน DRP + รายงานผลการซ้อม',                description: 'Disaster Recovery Plan — แผนกู้คืนระบบ IT หลังเกิดภัยพิบัติ รวมถึงขั้นตอนกู้คืนข้อมูล เซิร์ฟเวอร์ และระบบเครือข่าย', status: 'in_progress', owner: 'IT Infrastructure', start: 5,  end: 50, ref: REFS.vachira, documentUrl: '', notes: '' },
+  // หมวด 2 — การจัดการความเสี่ยงในระบบ IT
+  { id: '2.1', catId: 2, title: 'จัดทำแผนจัดการความเสี่ยงสำเร็จ (มีสารบัญ เลขหน้า ผลการประเมินจุดอ่อน/ช่องโหว่)', owner: 'IT + งาน RM', startDate: '2569-02-17', dueDate: '2569-04-27', ref: REFS.banbung },
+  { id: '2.2', catId: 2, title: 'การให้คะแนนความเสี่ยงถูกต้อง ทั้งคะแนน P และ I ไม่นำอุบัติการณ์ที่เกิดขึ้นแล้วมานับ', owner: 'IT + งาน RM', startDate: '2569-02-17', dueDate: '2569-04-27', ref: REFS.banbung },
+  { id: '2.3', catId: 2, title: 'จัดทำแผนกลยุทธ์จัดการความเสี่ยง โดยแยกเป็น 4 ตาราง จำแนกตามกลยุทธ์จัดการ', owner: 'IT + งาน RM', startDate: '2569-02-17', dueDate: '2569-04-27', ref: REFS.banbung },
+  { id: '2.4', catId: 2, title: 'จัดทำแผนปฏิบัติการความเสี่ยงของปีปัจจุบัน กำหนดระยะเวลา งบประมาณ ผู้รับผิดชอบ', owner: 'IT + งาน RM', startDate: '2569-02-17', dueDate: '2569-04-27', ref: REFS.banbung },
+  { id: '2.5', catId: 2, title: 'แสดงผลการดำเนินงานอย่างน้อย 1 ครั้ง โดยเปรียบเทียบคะแนนความเสี่ยงก่อนและหลัง', owner: 'IT + งาน RM', startDate: '2569-02-17', dueDate: '2569-04-27', ref: REFS.banbung },
 
-  // หมวด 4 — Service & Incident
-  { id: '4.1', catId: 4, title: 'การจัดระบบ Service Desk',                     description: 'ระบบรับแจ้งปัญหาและคำร้องขอด้าน IT แบบรวมศูนย์ เช่น helpdesk, ticket system', status: 'in_progress', owner: 'IT Support',  start: 1,  end: 45, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '4.2', catId: 4, title: 'SLA + ผลการดำเนินงาน',                        description: 'Service Level Agreement — ข้อตกลงระดับการให้บริการ เช่น ระบบต้องพร้อมใช้งาน 99.5%, response time < 15 นาที', status: 'in_progress', owner: 'IT Support',  start: 5,  end: 48, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '4.3', catId: 4, title: 'บันทึกอุบัติการณ์ 3-6 เดือน',                  status: 'not_started', owner: 'IT Support',  start: 10, end: 58, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '4.4', catId: 4, title: 'บันทึกกิจกรรม IT รายวัน',                      status: 'not_started', owner: 'หัวหน้า IT',  start: 10, end: 60, ref: REFS.banbung, documentUrl: '', notes: '' },
+  // หมวด 3 — การจัดการความมั่นคงปลอดภัยในระบบ IT
+  { id: '3.1', catId: 3, title: 'จัดทำนโยบายด้านความมั่นคงปลอดภัย และนโยบาย PDPA สำเร็จ', owner: 'IT ทั้งหมด', startDate: '2569-03-17', dueDate: '2569-05-25', ref: REFS.sarapee },
+  { id: '3.2', catId: 3, title: 'จัดทำระเบียบปฏิบัติด้านความมั่นคงปลอดภัยที่สำคัญสำหรับบุคลากรทุกคน', owner: 'IT ทั้งหมด', startDate: '2569-03-17', dueDate: '2569-05-25', ref: REFS.sarapee },
+  { id: '3.3', catId: 3, title: 'ดำเนินการประเมินการรับรู้ เข้าใจ และปฏิบัติตามระเบียบกับบุคลากรทุกคน 100%', owner: 'IT ทั้งหมด', startDate: '2569-03-17', dueDate: '2569-05-25', ref: REFS.banbung },
+  { id: '3.4', catId: 3, title: 'ปรับปรุงห้อง Data Center ตามหัวข้อในคู่มือ HAIT ข้อ A B C D เสร็จสิ้นทุกข้อ', owner: 'IT ทั้งหมด', startDate: '2569-03-17', dueDate: '2569-05-25', ref: REFS.tmiDoc },
+  { id: '3.5', catId: 3, title: 'จัดทำแผน BCP ของทุกหน่วยงานที่ใช้ระบบ HIS เสร็จสิ้น โดยมีรายละเอียดขั้นตอนการปฏิบัติ', owner: 'IT ทั้งหมด', startDate: '2569-03-17', dueDate: '2569-05-25', ref: REFS.vachira },
+  { id: '3.6', catId: 3, title: 'วางระบบการ Backup Offline และจัดทำคู่มือการปฏิบัติงาน Backup Offline ทุกฐานข้อมูล', owner: 'IT ทั้งหมด', startDate: '2569-03-17', dueDate: '2569-05-25', ref: REFS.banbung },
+  { id: '3.7', catId: 3, title: 'ดำเนินการซ้อมแผน BCP โดยตรวจสอบขั้นตอน จับเวลา มีรายงานผล', owner: 'IT ทั้งหมด', startDate: '2569-03-17', dueDate: '2569-05-25', ref: REFS.vachira },
+  { id: '3.8', catId: 3, title: 'นำผลการซ้อมแผน BCP มาปรับปรุงให้แผนดีขึ้น อย่างน้อย 1 รอบ PDCA', owner: 'IT ทั้งหมด', startDate: '2569-03-17', dueDate: '2569-05-25', ref: REFS.vachira },
 
-  // หมวด 5 — คุณภาพข้อมูล
-  { id: '5.1', catId: 5, title: 'ตรวจสอบคุณภาพเวชระเบียน OPD',                 status: 'completed',   owner: 'เวชระเบียน', start: 1, end: 55, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '5.2', catId: 5, title: 'ตรวจสอบคุณภาพเวชระเบียน IPD',                 status: 'in_progress', owner: 'เวชระเบียน', start: 5, end: 58, ref: REFS.banbung, documentUrl: '', notes: '' },
+  // หมวด 4 — การจัดระบบบริการ IT โรงพยาบาล
+  { id: '4.1', catId: 4, title: 'วางระบบ Service Desk ให้ชัดเจน เรื่องจุดติดต่อ ช่องทางติดต่อ ผู้รับเรื่อง', owner: 'IT + งาน HA', startDate: '2569-03-17', dueDate: '2569-05-25', ref: REFS.banbung },
+  { id: '4.2', catId: 4, title: 'จัดทำ SLA โดยให้น้ำหนักกับการบริการผู้ป่วยไม่ให้ติดขัด รับประกันเวลา', owner: 'IT + งาน HA', startDate: '2569-03-17', dueDate: '2569-05-25', ref: REFS.banbung },
+  { id: '4.3', catId: 4, title: 'วางระบบบันทึกอุบัติการณ์ ให้มีหัวข้อครบตามคู่มือ HAIT กำหนดผู้รับผิดชอบ', owner: 'IT + งาน HA', startDate: '2569-03-17', dueDate: '2569-05-25', ref: REFS.banbung },
+  { id: '4.4', catId: 4, title: 'ดำเนินการบันทึกอุบัติการณ์ ให้มีจำนวนไม่น้อยกว่าร้อยละ 50 ของจำนวนเหตุการณ์จริง', owner: 'IT + งาน HA', startDate: '2569-03-17', dueDate: '2569-05-25', ref: REFS.banbung },
+  { id: '4.5', catId: 4, title: 'วางระบบการบันทึกกิจกรรมรายบุคคลของบุคลากรในฝ่าย IT ให้มีหัวข้อครบตามคู่มือ', owner: 'IT + งาน HA', startDate: '2569-03-17', dueDate: '2569-05-25', ref: REFS.banbung },
+  { id: '4.6', catId: 4, title: 'ดำเนินการบันทึกกิจกรรมรายบุคคล ให้เกิดการบันทึกทุกคน ทุกวัน ครบทุกชั่วโมง', owner: 'IT + งาน HA', startDate: '2569-03-17', dueDate: '2569-05-25', ref: REFS.banbung },
 
-  // หมวด 6 — ออกแบบระบบ
-  { id: '6.1',   catId: 6, title: 'วิเคราะห์ระบบเดิม vs ใหม่',                  status: 'not_started', owner: 'Developer', start: 15, end: 48, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '6.2.1', catId: 6, title: 'Context Diagram',                           description: 'แผนภาพแสดงภาพรวมของระบบ + ผู้ใช้/ระบบภายนอกที่มีปฏิสัมพันธ์ อยู่ระดับ 0 ของ DFD', status: 'not_started', owner: 'Developer', start: 20, end: 50, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '6.2.2', catId: 6, title: 'Data Flow Diagram',                         description: 'DFD — แผนภาพแสดงการไหลของข้อมูลระหว่าง process, data store, และ external entity ในระบบ', status: 'not_started', owner: 'Developer', start: 22, end: 52, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '6.2.3', catId: 6, title: 'ER-Diagram',                                description: 'Entity-Relationship Diagram — แผนภาพแสดงความสัมพันธ์ระหว่างตาราง/entity ในฐานข้อมูล', status: 'not_started', owner: 'Developer', start: 25, end: 55, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '6.2.4', catId: 6, title: 'Data Dictionary',                           description: 'เอกสารรวบรวมคำอธิบายฟิลด์/ตารางทั้งหมดในฐานข้อมูล รวมถึงชนิดข้อมูล ขนาด และความหมาย', status: 'not_started', owner: 'Developer', start: 28, end: 58, ref: REFS.banbung, documentUrl: '', notes: '' },
+  // หมวด 5 — การควบคุมคุณภาพข้อมูลในระบบ IT
+  { id: '5.1', catId: 5, title: 'วางระบบการตรวจสอบเวชระเบียนผู้ป่วยนอก กำหนดคณะกรรมการตรวจสอบ', owner: 'Auditor + เวชระเบียน', startDate: '2569-02-17', dueDate: '2569-05-25', ref: REFS.banbung },
+  { id: '5.2', catId: 5, title: 'ดำเนินการตรวจสอบคุณภาพเวชระเบียนผู้ป่วยนอก ให้มีคะแนนคุณภาพของแพทย์แต่ละคน', owner: 'Auditor + เวชระเบียน', startDate: '2569-02-17', dueDate: '2569-05-25', ref: REFS.banbung },
+  { id: '5.3', catId: 5, title: 'นำผลการตรวจสอบคุณภาพเวชระเบียนผู้ป่วยนอก มากำหนดแผนพัฒนาเฉพาะเจาะจง', owner: 'Auditor + เวชระเบียน', startDate: '2569-02-17', dueDate: '2569-05-25', ref: REFS.banbung },
+  { id: '5.4', catId: 5, title: 'ทดสอบพิมพ์เวชระเบียนผู้ป่วยนอกออกมาในกระดาษ แล้วตรวจสอบความผิดเพี้ยน', owner: 'Auditor + เวชระเบียน', startDate: '2569-02-17', dueDate: '2569-05-25', ref: REFS.banbung },
+  { id: '5.5', catId: 5, title: 'วางระบบการตรวจสอบเวชระเบียนผู้ป่วยใน กำหนดคณะกรรมการตรวจสอบ', owner: 'Auditor + เวชระเบียน', startDate: '2569-02-17', dueDate: '2569-05-25', ref: REFS.banbung },
+  { id: '5.6', catId: 5, title: 'นำผลการตรวจสอบคุณภาพเวชระเบียนผู้ป่วยใน มากำหนดแผนพัฒนาเฉพาะเจาะจง', owner: 'Auditor + เวชระเบียน', startDate: '2569-02-17', dueDate: '2569-05-25', ref: REFS.banbung },
+  { id: '5.7', catId: 5, title: 'ทดสอบพิมพ์เวชระเบียนผู้ป่วยในออกมาในกระดาษ แล้วตรวจสอบความผิดเพี้ยน', owner: 'Auditor + เวชระเบียน', startDate: '2569-02-17', dueDate: '2569-05-25', ref: REFS.banbung },
 
-  // หมวด 7 — Capacity & Competency
-  { id: '7.1.1', catId: 7, title: 'ทะเบียน Hardware',                          status: 'completed',   owner: 'IT Infrastructure', start: 1,  end: 35, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '7.1.2', catId: 7, title: 'ทะเบียน Software',                          status: 'in_progress', owner: 'IT Infrastructure', start: 5,  end: 40, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '7.1.3', catId: 7, title: 'ทะเบียน Network + Diagram',                 status: 'in_progress', owner: 'IT Infrastructure', start: 5,  end: 45, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '7.1.4', catId: 7, title: 'Utilization Server/Internet',               status: 'not_started', owner: 'IT Infrastructure', start: 15, end: 55, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '7.2.1', catId: 7, title: 'Competency Mapping/Dict/Template',          description: 'การวิเคราะห์สมรรถนะที่บุคลากรแต่ละตำแหน่งต้องมี vs ที่มีจริง เพื่อวางแผนพัฒนา', status: 'not_started', owner: 'HR',                start: 18, end: 55, ref: REFS.banbung, documentUrl: '', notes: '' },
-  { id: '7.2.2', catId: 7, title: 'ประเมิน Competency + แผนพัฒนา',             status: 'not_started', owner: 'CIO',               start: 25, end: 60, ref: REFS.banbung, documentUrl: '', notes: '' },
+  // หมวด 6 — การควบคุมคุณภาพการพัฒนาโปรแกรม
+  { id: '6.1', catId: 6, title: 'จัดทำเอกสารวิเคราะห์ระบบ ครอบคลุม การระบุปัญหา ความต้องการผู้ใช้ ผังงานระบบเดิม', owner: 'IT ทั้งหมด', startDate: '2569-04-28', dueDate: '2569-06-08', ref: REFS.banbung },
+  { id: '6.2', catId: 6, title: 'จัดทำเอกสารออกแบบระบบ ครอบคลุม Context Diagram DFD ER Diagram Data Dictionary', owner: 'IT ทั้งหมด', startDate: '2569-04-28', dueDate: '2569-06-08', ref: REFS.banbung },
+  { id: '6.3', catId: 6, title: 'มีคู่มือสำหรับผู้ใช้โปรแกรม ที่มีรายละเอียดครบถ้วน', owner: 'IT ทั้งหมด', startDate: '2569-04-28', dueDate: '2569-06-08', ref: REFS.banbung },
+
+  // หมวด 7 — การจัดการศักยภาพ การเปลี่ยนแปลง และสมรรถนะ
+  { id: '7.1', catId: 7, title: 'มีทะเบียน Hardware และตารางสรุปทรัพยากร แสดง Capacity ในภาพรวม', owner: 'IT ทั้งหมด', startDate: '2569-05-12', dueDate: '2569-07-06', ref: REFS.banbung },
+  { id: '7.2', catId: 7, title: 'มีทะเบียน Software และตารางสรุปทรัพยากร แสดง Capacity ในภาพรวม', owner: 'IT ทั้งหมด', startDate: '2569-05-12', dueDate: '2569-07-06', ref: REFS.banbung },
+  { id: '7.3', catId: 7, title: 'มีทะเบียนอุปกรณ์ Network และตารางสรุปทรัพยากร แสดง Network Diagram', owner: 'IT ทั้งหมด', startDate: '2569-05-12', dueDate: '2569-07-06', ref: REFS.banbung },
+  { id: '7.4', catId: 7, title: 'มีการวิเคราะห์ Gap Analysis โดยแสดงความต้องการขั้นต่ำเทียบกับสิ่งที่มี', owner: 'IT ทั้งหมด', startDate: '2569-05-12', dueDate: '2569-07-06', ref: REFS.banbung },
+  { id: '7.5', catId: 7, title: 'มีการวิเคราะห์ Utilization ของ Server ทุกตัว Network Bandwidth และ Traffic', owner: 'IT ทั้งหมด', startDate: '2569-05-12', dueDate: '2569-07-06', ref: REFS.banbung },
+  { id: '7.6', catId: 7, title: 'มีการกำหนด Competency Mapping Competency Template และ Competency Dictionary', owner: 'IT ทั้งหมด', startDate: '2569-05-12', dueDate: '2569-07-06', ref: REFS.banbung },
+  { id: '7.7', catId: 7, title: 'มีการจัดทำแบบประเมิน และประเมินสมรรถนะรายบุคคลของเจ้าหน้าที่ฝ่าย IT', owner: 'IT ทั้งหมด', startDate: '2569-05-12', dueDate: '2569-07-06', ref: REFS.banbung },
+  { id: '7.8', catId: 7, title: 'มีการจัดทำแผนพัฒนาสมรรถนะรายบุคคลที่สอดคล้องกับผลการประเมิน', owner: 'IT ทั้งหมด', startDate: '2569-05-12', dueDate: '2569-07-06', ref: REFS.banbung },
 ];
+
+export const INITIAL_ITEMS: Item[] = PLAN.map((p) => ({
+  id: p.id,
+  catId: p.catId,
+  title: p.title,
+  status: 'not_started',
+  owner: p.owner,
+  start: beDateToDayNumber(p.startDate),
+  end: beDateToDayNumber(p.dueDate),
+  startDate: p.startDate,
+  dueDate: p.dueDate,
+  ref: p.ref,
+  documentUrl: '',
+  notes: '',
+}));

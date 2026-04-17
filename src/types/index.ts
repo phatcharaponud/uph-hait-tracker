@@ -22,8 +22,14 @@ export interface Item {
   description?: string;
   status: StatusValue;
   owner: string;
+  /** Day number (1-based) in the project timeline — derived from startDate. */
   start: number;
+  /** Day number (1-based) in the project timeline — derived from dueDate. */
   end: number;
+  /** Source-of-truth start date in Thai BE (YYYY-MM-DD), e.g. "2569-02-17". */
+  startDate?: string;
+  /** Source-of-truth due date in Thai BE (YYYY-MM-DD), e.g. "2569-04-13". */
+  dueDate?: string;
   ref: string;
   documentUrl: string;
   notes: string;

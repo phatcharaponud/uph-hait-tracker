@@ -24,8 +24,6 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - name: Validate checklist
-        run: npm run validate:checklist
       - name: Test
         run: npm test
       - name: Build

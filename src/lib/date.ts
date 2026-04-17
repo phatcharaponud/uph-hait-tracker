@@ -8,8 +8,8 @@
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /** Project timeline anchor (HAIT submission window for MUP 2026). */
-export const TIMELINE_START = new Date(2026, 3, 1); // April 1, 2026 (month is 0-indexed)
-export const TIMELINE_END = new Date(2026, 4, 31);  // May 31, 2026
+export const TIMELINE_START = new Date(2026, 1, 1);  // February 1, 2026
+export const TIMELINE_END = new Date(2026, 6, 31);   // July 31, 2026
 export const TOTAL_DAYS =
   Math.round((TIMELINE_END.getTime() - TIMELINE_START.getTime()) / MS_PER_DAY) + 1;
 
@@ -39,6 +39,21 @@ function dateToDayNumber(date: Date): number {
   const cmp = new Date(date);
   cmp.setHours(0, 0, 0, 0);
   return Math.round((cmp.getTime() - start.getTime()) / MS_PER_DAY) + 1;
+}
+
+/**
+ * Parse a Buddhist Era date string (YYYY-MM-DD, BE year) into a Date.
+ *   "2569-02-17" → 2026-02-17
+ */
+export function parseBEDate(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  if (!y || !m || !d) throw new Error(`Invalid BE date: ${s}`);
+  return new Date(y - 543, m - 1, d);
+}
+
+/** Day number (1-based, in the project timeline) for a BE date string. */
+export function beDateToDayNumber(s: string): number {
+  return dateToDayNumber(parseBEDate(s));
 }
 
 /** "17 เม.ย." (day + short Thai month, no year) */
