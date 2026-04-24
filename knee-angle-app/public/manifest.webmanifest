@@ -1,0 +1,14 @@
+{
+  "name": "วัดมุมเข่า – Knee Angle Tracker",
+  "short_name": "มุมเข่า",
+  "description": "วัดมุมงอเข่า/เหยียดขา และมุมโก่งขา ด้วยกล้องมือถือ",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#1e3a5f",
+  "lang": "th",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
