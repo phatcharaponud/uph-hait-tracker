@@ -1,0 +1,19 @@
+# Bubblewrap signing — NEVER commit
+android.keystore
+android.keystore.json
+*.jks
+*.keystore
+
+# Bubblewrap generated Android Studio project
+app/
+build/
+gradle/
+gradlew
+gradlew.bat
+local.properties
+.gradle/
+
+# Build artifacts
+*.aab
+*.apk
+output-metadata.json

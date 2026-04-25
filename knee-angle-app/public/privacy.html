@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>นโยบายความเป็นส่วนตัว – วัดมุมเข่า</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root { --brand: #1e3a5f; --accent: #fbbf24; }
+      body {
+        font-family: 'Sarabun', system-ui, sans-serif;
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 24px 18px 72px;
+        color: #1f2937;
+        line-height: 1.7;
+      }
+      h1 { color: var(--brand); margin-bottom: 4px; }
+      h2 { color: var(--brand); margin-top: 28px; border-left: 4px solid var(--accent); padding-left: 10px; }
+      .muted { color: #6b7280; font-size: 14px; }
+      ul { padding-left: 22px; }
+      li { margin-bottom: 6px; }
+      .box {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 14px 16px;
+        margin: 16px 0;
+      }
+      a { color: var(--brand); }
+      footer { margin-top: 48px; font-size: 13px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 16px; }
+    </style>
+  </head>
+  <body>
+    <h1>นโยบายความเป็นส่วนตัว</h1>
+    <div class="muted">แอป "วัดมุมเข่า – Knee Angle Tracker" • มีผลใช้บังคับ: 25 เมษายน 2569 (พ.ศ.)</div>
+
+    <div class="box">
+      <strong>สรุปสั้น ๆ:</strong> แอปนี้ <u>ไม่ส่งภาพหรือข้อมูลใด ๆ ออกนอกอุปกรณ์ของคุณ</u>
+      การประมวลผลภาพและการคำนวณมุมทั้งหมดเกิดขึ้นในเบราว์เซอร์/แอปบนมือถือของคุณเท่านั้น
+    </div>
+
+    <h2>1. ข้อมูลที่เราเข้าถึง</h2>
+    <ul>
+      <li>
+        <strong>กล้องของอุปกรณ์</strong> — ใช้แสดงภาพสดเพื่อตรวจจับจุดอ้างอิงทางกายวิภาค (สะโพก เข่า ข้อเท้า)
+        ภาพจะถูกประมวลผลแบบ real-time ในหน่วยความจำของอุปกรณ์เท่านั้น
+        <strong>ไม่มีการบันทึก ไม่มีการอัปโหลด</strong> และไม่ถูกส่งไปยังเซิร์ฟเวอร์ใด ๆ
+      </li>
+      <li>
+        <strong>เซนเซอร์การวางตัวของอุปกรณ์ (Device Orientation)</strong> — ใช้แสดงระดับน้ำดิจิทัล
+        เพื่อช่วยให้ผู้ใช้ถือมือถือได้ตรง ค่าจากเซนเซอร์ไม่ถูกบันทึกหรือส่งออก
+      </li>
+    </ul>
+
+    <h2>2. ข้อมูลที่เรา <u>ไม่</u> เก็บ</h2>
+    <ul>
+      <li>ข้อมูลส่วนบุคคล (ชื่อ อีเมล หมายเลขโทรศัพท์ บัตรประชาชน)</li>
+      <li>ตำแหน่งที่ตั้ง (Location/GPS)</li>
+      <li>รายชื่อผู้ติดต่อ ปฏิทิน รูปภาพในเครื่อง</li>
+      <li>รหัสประจำเครื่อง (advertising ID, IMEI)</li>
+      <li>ประวัติการใช้งาน (analytics, tracking)</li>
+      <li>คุกกี้สำหรับโฆษณา</li>
+    </ul>
+
+    <h2>3. การใช้บริการของบุคคลที่สาม</h2>
+    <ul>
+      <li>
+        <strong>Google MediaPipe Pose model</strong> — ดาวน์โหลดไฟล์โมเดล AI จาก
+        Google CDN (<code>storage.googleapis.com</code>) มาเก็บ cache บนอุปกรณ์เมื่อเปิดแอปครั้งแรก
+        การเชื่อมต่อนี้ส่งเฉพาะคำขอไฟล์โมเดล <strong>ไม่ส่งภาพหรือข้อมูลผู้ใช้</strong>
+      </li>
+      <li>
+        <strong>Google Fonts</strong> — โหลดฟอนต์ Sarabun สำหรับการแสดงผล
+      </li>
+    </ul>
+
+    <h2>4. ความปลอดภัย</h2>
+    <ul>
+      <li>การสื่อสารทั้งหมดใช้ HTTPS (TLS)</li>
+      <li>เนื่องจากไม่มีการเก็บข้อมูลฝั่งเซิร์ฟเวอร์ จึงไม่มีฐานข้อมูลที่อาจถูกละเมิด</li>
+      <li>หากต้องการลบข้อมูลใด ๆ เพียงล้าง cache ของเบราว์เซอร์ หรือถอนการติดตั้งแอป</li>
+    </ul>
+
+    <h2>5. ผู้ใช้ที่เป็นเด็ก</h2>
+    <p>
+      แอปนี้ออกแบบมาสำหรับบุคลากรทางการแพทย์และผู้ใหญ่ ไม่ได้มุ่งเป้าไปที่เด็กอายุต่ำกว่า 13 ปี
+      ผู้ปกครองควรกำกับดูแลการใช้งานหากเด็กใช้แอปนี้
+    </p>
+
+    <h2>6. ข้อจำกัดของการวัด</h2>
+    <p>
+      แอปนี้ใช้การประมาณท่าทางจากภาพ 2 มิติ มีความคลาดเคลื่อนปกติประมาณ <strong>±3–5 องศา</strong>
+      เป็นเครื่องมือสำหรับ <strong>คัดกรองและติดตามแนวโน้ม</strong> เท่านั้น
+      <u>ไม่ใช่อุปกรณ์ทางการแพทย์</u> และไม่สามารถใช้แทน goniometer
+      หรือการเอกซเรย์ขายืนเต็มความยาว (full-length standing radiograph) ในการวินิจฉัยได้
+      ปรึกษาแพทย์เฉพาะทางสำหรับการวินิจฉัยและรักษา
+    </p>
+
+    <h2>7. การเปลี่ยนแปลงนโยบาย</h2>
+    <p>
+      หากมีการเปลี่ยนแปลงนโยบายฉบับนี้ จะอัปเดตวันที่ "มีผลใช้บังคับ" ด้านบน
+      ผู้ใช้ที่ใช้งานต่อหลังจากการเปลี่ยนแปลงถือว่ายอมรับนโยบายฉบับใหม่
+    </p>
+
+    <h2>8. ผู้ติดต่อ</h2>
+    <ul>
+      <li>โรงพยาบาลมหาวิทยาลัยพะเยา</li>
+      <li>อีเมล: <a href="mailto:hospital@up.ac.th">hospital@up.ac.th</a></li>
+      <li>เว็บไซต์: <a href="https://hospital.up.ac.th">hospital.up.ac.th</a></li>
+    </ul>
+
+    <footer>
+      © 2569 โรงพยาบาลมหาวิทยาลัยพะเยา • <a href="./">กลับสู่แอป</a>
+    </footer>
+  </body>
+</html>

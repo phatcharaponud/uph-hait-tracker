@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Mode, Side } from '../types';
 import { requestOrientationPermission } from '../lib/deviceOrientation';
+import AboutModal from './AboutModal';
 
 interface Props {
   onStart: (opts: { mode: Mode; side: Side | 'auto'; facing: 'user' | 'environment'; showGuide: boolean }) => void;
@@ -11,6 +12,7 @@ export default function StartScreen({ onStart }: Props) {
   const [side, setSide] = useState<Side | 'auto'>('auto');
   const [facing, setFacing] = useState<'user' | 'environment'>('environment');
   const [showGuide, setShowGuide] = useState(true);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   const handleStart = async () => {
     await requestOrientationPermission();
@@ -20,13 +22,22 @@ export default function StartScreen({ onStart }: Props) {
   return (
     <div className="min-h-[100dvh] bg-[#0b1220] text-white">
       <div className="mx-auto max-w-xl px-5 pb-12 pt-6">
-        <header className="mb-6">
-          <div className="text-amber-300 text-sm">โรงพยาบาลมหาวิทยาลัยพะเยา</div>
-          <h1 className="mt-1 text-2xl font-bold">วัดมุมเข่าด้วยกล้องมือถือ</h1>
-          <p className="mt-1 text-sm text-white/70">
-            วิเคราะห์มุมงอเข่า / เหยียดขา และมุมโก่งขา ด้วย MediaPipe Pose
-            ตามจุดอ้างอิงมาตรฐาน (Hip – Knee – Ankle)
-          </p>
+        <header className="mb-6 flex items-start justify-between gap-3">
+          <div>
+            <div className="text-amber-300 text-sm">โรงพยาบาลมหาวิทยาลัยพะเยา</div>
+            <h1 className="mt-1 text-2xl font-bold">วัดมุมเข่าด้วยกล้องมือถือ</h1>
+            <p className="mt-1 text-sm text-white/70">
+              วิเคราะห์มุมงอเข่า / เหยียดขา และมุมโก่งขา ด้วย MediaPipe Pose
+              ตามจุดอ้างอิงมาตรฐาน (Hip – Knee – Ankle)
+            </p>
+          </div>
+          <button
+            onClick={() => setAboutOpen(true)}
+            className="shrink-0 rounded-md border border-white/20 px-2.5 py-1.5 text-xs text-white/80"
+            aria-label="เกี่ยวกับและคำเตือน"
+          >
+            ℹ︎ เกี่ยวกับ
+          </button>
         </header>
 
         <section className="mb-5 rounded-xl border border-white/10 bg-white/5 p-4">
@@ -106,7 +117,18 @@ export default function StartScreen({ onStart }: Props) {
         >
           เริ่มวัด
         </button>
+
+        <div className="mt-4 text-center text-xs text-white/50">
+          <a href="./privacy.html" target="_blank" rel="noreferrer" className="underline">
+            นโยบายความเป็นส่วนตัว
+          </a>
+          {' • '}
+          <button onClick={() => setAboutOpen(true)} className="underline">
+            คำเตือนการใช้งาน
+          </button>
+        </div>
       </div>
+      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   );
 }
