@@ -1,0 +1,27 @@
+name: Typecheck
+
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths:
+      - 'kneecare-app/**'
+  pull_request:
+    paths:
+      - 'kneecare-app/**'
+
+defaults:
+  run:
+    working-directory: kneecare-app
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: kneecare-app/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck

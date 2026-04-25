@@ -2,10 +2,13 @@
   "expo": {
     "name": "KneeCare Companion",
     "slug": "kneecare-companion",
+    "scheme": "kneecare",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "primaryColor": "#1e3a5f",
+    "description": "เพื่อนคู่ใจผู้ป่วยข้อเข่าเสื่อมและผู้ป่วยผ่าตัดข้อเข่าเทียม โรงพยาบาลมหาวิทยาลัยพะเยา",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -14,23 +17,53 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "ac.up.kneecare"
+      "bundleIdentifier": "ac.up.kneecare",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "ใช้กล้องสำหรับวิเคราะห์ท่าทางการออกกำลังกาย (Phase 2 — ประมวลผลในเครื่อง ไม่ส่งออก)",
+        "NSPhotoLibraryUsageDescription": "ใช้รูปภาพเพื่อบันทึกอาการเข่า (เก็บในเครื่องเท่านั้น)"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1e3a5f"
       },
-      "package": "ac.up.kneecare"
+      "package": "ac.up.kneecare",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.VIBRATE"
+      ],
+      "blockedPermissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "locales": {
+      "th": "./locales/th.json"
     },
     "plugins": [
       [
         "expo-notifications",
         {
-          "color": "#1e3a5f"
+          "icon": "./assets/notification-icon.png",
+          "color": "#1e3a5f",
+          "defaultChannel": "medication-reminders"
         }
       ]
     ],
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_AFTER_RUNNING_eas_init"
+      }
+    },
+    "owner": "REPLACE_WITH_EXPO_USERNAME",
     "experiments": {
       "typedRoutes": false
     }

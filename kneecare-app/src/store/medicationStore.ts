@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import { Medication, MedicationLog } from '../types';
 import { readJson, StorageKeys, writeJson } from '../lib/storage';
 import { todayIso } from '../lib/thaiDate';
+import {
+  cancelAllForMedication,
+  ensureNotificationSetup,
+  scheduleMedicationReminders,
+} from '../lib/notifications';
 
 interface State {
   medications: Medication[];
@@ -34,16 +39,46 @@ export const useMedicationStore = create<State>((set, get) => ({
   },
   addMedication: async (m) => {
     const med: Medication = { ...m, id: newId(), startDate: todayIso() };
+    try {
+      const granted = await ensureNotificationSetup();
+      if (granted) {
+        med.notificationIds = await scheduleMedicationReminders(med);
+      }
+    } catch {
+      // notifications optional — continue without them
+    }
     const medications = [...get().medications, med];
     set({ medications });
     await writeJson(StorageKeys.medications, medications);
   },
   updateMedication: async (id, patch) => {
-    const medications = get().medications.map((m) => (m.id === id ? { ...m, ...patch } : m));
+    const current = get().medications.find((m) => m.id === id);
+    if (!current) return;
+    const next: Medication = { ...current, ...patch };
+    const timesChanged = patch.times && patch.times.join('|') !== current.times.join('|');
+    const nameOrDoseChanged = patch.name || patch.dosage || patch.notes !== undefined;
+    if (timesChanged || nameOrDoseChanged) {
+      try {
+        await cancelAllForMedication(current.notificationIds ?? []);
+        const granted = await ensureNotificationSetup();
+        next.notificationIds = granted ? await scheduleMedicationReminders(next) : [];
+      } catch {
+        // ignore
+      }
+    }
+    const medications = get().medications.map((m) => (m.id === id ? next : m));
     set({ medications });
     await writeJson(StorageKeys.medications, medications);
   },
   removeMedication: async (id) => {
+    const target = get().medications.find((m) => m.id === id);
+    if (target?.notificationIds?.length) {
+      try {
+        await cancelAllForMedication(target.notificationIds);
+      } catch {
+        // ignore
+      }
+    }
     const medications = get().medications.filter((m) => m.id !== id);
     const logs = get().logs.filter((l) => l.medicationId !== id);
     set({ medications, logs });

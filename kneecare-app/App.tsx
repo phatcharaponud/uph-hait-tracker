@@ -7,6 +7,7 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { usePatientStore } from './src/store/patientStore';
 import { useDiaryStore } from './src/store/diaryStore';
 import { useMedicationStore } from './src/store/medicationStore';
+import { ensureNotificationSetup } from './src/lib/notifications';
 import { colors } from './src/theme/colors';
 
 export default function App() {
@@ -18,6 +19,9 @@ export default function App() {
   useEffect(() => {
     (async () => {
       await Promise.all([loadPatient(), loadDiary(), loadMeds()]);
+      ensureNotificationSetup().catch(() => {
+        // permission denied — user can re-enable in settings
+      });
       setReady(true);
     })();
   }, [loadPatient, loadDiary, loadMeds]);

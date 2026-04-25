@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  KneeCare Companion - Source Icon (1024x1024)
+  Export to PNG for use as app icon.
+
+  Usage:
+    Inkscape:  inkscape icon-source.svg -o icon.png -w 1024 -h 1024
+    rsvg:      rsvg-convert -w 1024 -h 1024 icon-source.svg -o icon.png
+    Figma/Illustrator: open and Export PNG @ 1024px
+
+  For Android adaptive icon (foreground only):
+    inkscape icon-source.svg --export-id=fg-only -o adaptive-icon.png -w 1024 -h 1024
+
+  For notification icon (white silhouette):
+    inkscape icon-source.svg --export-id=mono -o notification-icon.png -w 96 -h 96
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="#1e3a5f"/>
+
+  <!-- Foreground group (used for adaptive icon export) -->
+  <g id="fg-only" transform="translate(512 512)">
+    <!-- Outer ring -->
+    <circle r="320" fill="none" stroke="#e8a33d" stroke-width="24" opacity="0.5"/>
+
+    <!-- Stylized knee joint: two bones with a ring at the joint -->
+    <g stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <!-- Femur (upper) -->
+      <path d="M -90 -240 Q -90 -160 -50 -90" stroke-width="56"/>
+      <!-- Tibia (lower) -->
+      <path d="M 50 90 Q 90 160 90 240" stroke-width="56"/>
+    </g>
+
+    <!-- Joint (patella) -->
+    <circle cx="0" cy="0" r="64" fill="#e8a33d"/>
+    <circle cx="0" cy="0" r="64" fill="none" stroke="#ffffff" stroke-width="8"/>
+
+    <!-- Check mark (recovery / progress) -->
+    <path d="M -22 0 L -4 18 L 26 -16" stroke="#1e3a5f" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+
+  <!-- Hidden monochrome version for notification icon export -->
+  <g id="mono" visibility="hidden">
+    <rect width="1024" height="1024" fill="transparent"/>
+    <g transform="translate(512 512)" stroke="#ffffff" stroke-linecap="round" fill="#ffffff">
+      <path d="M -90 -240 Q -90 -160 -50 -90" stroke-width="56" fill="none"/>
+      <path d="M 50 90 Q 90 160 90 240" stroke-width="56" fill="none"/>
+      <circle cx="0" cy="0" r="64"/>
+    </g>
+  </g>
+</svg>

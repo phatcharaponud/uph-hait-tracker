@@ -32,6 +32,7 @@ export interface Medication {
   startDate: string;
   endDate: string | null;
   notes?: string;
+  notificationIds?: string[];
 }
 
 export interface MedicationLog {

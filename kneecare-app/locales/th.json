@@ -1,0 +1,5 @@
+{
+  "CFBundleDisplayName": "KneeCare",
+  "NSCameraUsageDescription": "ใช้กล้องสำหรับวิเคราะห์ท่าทางการออกกำลังกาย",
+  "NSPhotoLibraryUsageDescription": "ใช้รูปภาพเพื่อบันทึกอาการเข่า"
+}
