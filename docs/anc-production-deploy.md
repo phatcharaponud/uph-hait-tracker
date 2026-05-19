@@ -5,7 +5,7 @@
 
 URL Production จะเป็น
 ```
-https://phatcharaponud.github.io/uph-hait-tracker/
+https://phatcharaponud.github.io/uph-anc-stats/
 ```
 
 มี 3 ขั้นตอนหลัก (ทำครั้งเดียว):
@@ -36,7 +36,7 @@ https://phatcharaponud.github.io/uph-hait-tracker/
 
 ## ขั้นที่ 2 · ตั้งค่า GitHub Secrets
 
-1. เปิด <https://github.com/phatcharaponud/uph-hait-tracker/settings/secrets/actions>
+1. เปิด <https://github.com/phatcharaponud/uph-anc-stats/settings/secrets/actions>
 2. กด **New repository secret**
 3. กรอก:
    - Name: **`VITE_ANC_API_URL`**
@@ -50,14 +50,14 @@ build จะถือเป็นค่าว่าง — ไม่กระท
 
 ## ขั้นที่ 3 · เปิดใช้ GitHub Pages และ Deploy
 
-1. เปิด <https://github.com/phatcharaponud/uph-hait-tracker/settings/pages>
+1. เปิด <https://github.com/phatcharaponud/uph-anc-stats/settings/pages>
 2. ที่ **Build and deployment → Source** เลือก **GitHub Actions**
    (ถ้าตั้งไว้แล้วก็ข้าม)
 3. Merge PR หรือ push code เข้า `main` — GitHub Actions จะรัน workflow
    `.github/workflows/deploy.yml` อัตโนมัติ
 4. รอประมาณ 1–2 นาที ดูสถานะที่
-   <https://github.com/phatcharaponud/uph-hait-tracker/actions>
-5. เมื่อ ✅ เขียวแล้ว เปิด <https://phatcharaponud.github.io/uph-hait-tracker/>
+   <https://github.com/phatcharaponud/uph-anc-stats/actions>
+5. เมื่อ ✅ เขียวแล้ว เปิด <https://phatcharaponud.github.io/uph-anc-stats/>
 6. ดู header ของหน้าเว็บ ถ้าเห็น **"เชื่อม Google Sheets"** ไฟเขียว = ใช้งานได้จริง 🎉
 
 ---

@@ -4,7 +4,7 @@
 
 ## 🚀 Live Demo
 
-https://phatcharaponud.github.io/uph-hait-tracker/
+https://phatcharaponud.github.io/uph-anc-stats/
 
 ## ✨ Features
 
@@ -33,8 +33,8 @@ https://phatcharaponud.github.io/uph-hait-tracker/
 
 ```bash
 # Clone
-git clone https://github.com/phatcharaponud/uph-hait-tracker.git
-cd uph-hait-tracker
+git clone https://github.com/phatcharaponud/uph-anc-stats.git
+cd uph-anc-stats
 
 # Install
 npm install

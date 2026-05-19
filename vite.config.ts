@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: '/uph-hait-tracker/',
+  base: '/uph-anc-stats/',
   test: {
     environment: 'jsdom',
     globals: true,
