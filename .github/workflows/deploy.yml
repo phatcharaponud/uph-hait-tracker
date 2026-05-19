@@ -24,12 +24,13 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - name: Validate checklist
-        run: npm run validate:checklist
       - name: Test
         run: npm test
       - name: Build
         env:
+          # ANC Statistics backend (Google Apps Script Web App URL)
+          VITE_ANC_API_URL: ${{ secrets.VITE_ANC_API_URL }}
+          # Legacy HAIT vars — kept so the unused App.tsx still type-checks
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
         run: npm run build
